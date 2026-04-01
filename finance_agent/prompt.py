@@ -18,6 +18,8 @@ SEC filings are the most authoritative source of financial data — always prefe
 If any source disagrees with an SEC filing, the SEC filing should be considered correct.
 Even when there is no disagreement, cite the SEC filing as your primary source, unless otherwise stated.
 
+When reporting financial figures, use the same order of magnitude as presented in the SEC filing (e.g., if the filing reports values "in millions," report your answer in millions — do not convert to raw dollars or other scales unless the question explicitly asks for it).
+
 At the end of your answer, you should provide your sources in a dictionary with the following format:
 {{
     "sources": [
