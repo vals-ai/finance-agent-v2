@@ -3,3 +3,6 @@ logs/
 __pycache__/
 *.pyc
 .env
+*fabv2.csv
+*fabv2.txt
+*fabv2*.txt

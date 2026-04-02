@@ -26,10 +26,10 @@ class Calculator(Tool):
     description = (
         "Evaluate a mathematical expression and return the result. "
         "Use this tool for all arithmetic calculations instead of computing by hand. "
-        "Supports: +, -, *, /, // (floor division), ** (exponentiation), % (modulo), "
+        "Supports: +, -, *, /, ** (exponentiation), % (modulo), "
         "and parentheses for grouping. "
-        "Available functions: abs(), round(), min(), max(), int(), float(), floor(), ceil(), sqrt(), log(), log10(). "
-        "Examples: '(revenue - costs) * 0.21', '(2865507 / 1905871) ** 0.5 - 1', 'round(14060 / 2148, 2)'."
+        "Available functions: abs(), min(), max(), sqrt(), log(), log10(). "
+        "Examples: '(revenue - costs) * 0.21', '(2865507 / 1905871) ** 0.5 - 1', '14060 / 2148'."
     )
     parameters: dict[str, Any] = {
         "expression": {
@@ -43,13 +43,8 @@ class Calculator(Tool):
         self._evaluator = SimpleEval(
             functions={
                 "abs": abs,
-                "round": round,
                 "min": min,
                 "max": max,
-                "int": int,
-                "float": float,
-                "floor": math.floor,
-                "ceil": math.ceil,
                 "sqrt": math.sqrt,
                 "log": math.log,
                 "log10": math.log10,
