@@ -1,5 +1,6 @@
 from typing import Any
 
+from model_library.agent import AgentResult, TurnSummary
 from model_library.base import LLMConfig, TokenRetryParams
 from model_library.base.input import TextInput
 from model_library.registry_utils import get_registry_model
@@ -13,6 +14,25 @@ def create_override_config(**kwargs: object) -> LLMConfig:
         kwargs["max_tokens"] = kwargs["max_output_tokens"]
 
     return LLMConfig.model_validate(kwargs, strict=False)
+
+
+def _build_output_context(result: AgentResult) -> dict[str, Any]:
+    """Build a trimmed output context that keeps tool usage metadata but drops per-turn cost/token details."""
+    trimmed_turns = []
+    for turn in result.turns:
+        if not isinstance(turn, TurnSummary):
+            continue
+        trimmed_turns.append([tc.tool_name for tc in turn.tool_calls])
+
+    return {
+        "turns": trimmed_turns,
+        "total_turns": result.total_turns,
+        "success": result.success,
+        "error_count": result.error_count,
+        "tool_calls_count": result.tool_calls_count,
+        "tool_usage": result.tool_usage,
+        "final_duration_seconds": result.final_duration_seconds,
+    }
 
 
 async def get_custom_model(
@@ -44,6 +64,10 @@ async def get_custom_model(
 
         if not result.success and result.final_error:
             print(f"\nFAIL {question_id} failed: [{result.final_error.type}] {result.final_error.message}\n")
-        return OutputObject.from_agent_result(result, count_tool_metadata=True)
+        return OutputObject.from_agent_result(
+            result,
+            output_context=_build_output_context(result),
+            count_tool_metadata=True,
+        )
 
     return custom_call
