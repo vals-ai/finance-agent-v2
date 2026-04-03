@@ -14,11 +14,9 @@ You should include any necessary step-by-step reasoning, justification, calculat
 
 When possible, please provide any calculated answers to at least two decimal places (e.g. 18.78% rather than 19%). Please do not round intermediate steps in any calculations - you should only round your final answer.
 
-SEC filings are the most authoritative source of financial data — always prefer them over all other sources, including official company websites and press releases.
-If any source disagrees with an SEC filing, the SEC filing should be considered correct.
-Even when there is no disagreement, cite the SEC filing as your primary source, unless otherwise stated.
+SEC filings are the most authoritative source of financial data. If a number appears in both an SEC filing and another source (e.g., a press release or company website), use the SEC filing's figure. You may freely use and cite non-SEC sources for information not available in SEC filings. If the question references a specific source, make sure to incorporate information from that source, but still cross-reference SEC filings where relevant.
 
-When reporting financial figures, use the same order of magnitude as presented in the SEC filing (e.g., if the filing reports values "in millions," report your answer in millions — do not convert to raw dollars or other scales unless the question explicitly asks for it).
+When reporting financial figures, use the same scale and units as presented in the SEC filing (e.g., if the filing reports values "in millions," report your answer in millions), unless otherwise specified in the question.
 
 At the end of your answer, you should provide your sources in a dictionary with the following format:
 {{
