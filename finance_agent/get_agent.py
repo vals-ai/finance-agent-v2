@@ -1,4 +1,6 @@
-from model_library.agent import Agent, AgentConfig, AgentHooks, TurnLimit, TurnResult, default_before_query, truncate_oldest
+from pathlib import Path
+
+from model_library.agent import Agent, AgentConfig, AgentHooks, TimeLimit, TurnLimit, TurnResult, default_before_query, truncate_oldest
 from model_library.base import LLM, LLMConfig, RawResponse, TextInput
 from model_library.base.input import InputItem
 from model_library.exceptions import MaxContextWindowExceededError
@@ -17,6 +19,9 @@ from .tools import (
 )
 
 
+MAX_TIME_SECONDS = 120 * 60  # 2 hours
+
+
 class Parameters(BaseModel):
     model_name: str
     max_turns: int = 50
@@ -27,6 +32,7 @@ class Parameters(BaseModel):
 def get_agent(
     parameters: Parameters,
     llm: LLM | None = None,
+    log_dir: Path | None = None,
 ) -> Agent:
     """Helper method to instantiate an agent with the given parameters"""
     if llm is None:
@@ -57,12 +63,13 @@ def get_agent(
     # The loop exits when:
     # - submit_final_result tool returns done=True -> break, no final_error
     # - max_turns exceeded -> while condition fails, final_error = MaxTurnsExceeded
+    # - max_time exceeded -> time limit triggers, final_error = MaxTimeExceeded
     # - query error re-raised by before_query -> caught by outer except, final_error set
     # - context window exceeded -> before_query truncates history, continues (not a stop)
     # - text-only response (no tool calls) -> continues (overridden below, default would stop)
     #
     # Answer extraction (default_determine_answer):
-    # - On final_error (max_turns, query error, etc): returns ""
+    # - On final_error (max_turns, max_time, query error, etc): returns ""
     # - On clean exit: returns done tool output (submit_final_result)
     # - Fallback to LLM text: exists in default but is dead code here, because
     #   _should_stop=False means the only clean exit (no final_error) is the done tool break,
@@ -81,12 +88,16 @@ def get_agent(
         return default_before_query(history, last_error)
 
     def _should_stop(turn_result: TurnResult) -> bool:
-        """Never stop on text-only responses — only submit_final_result or max_turns can end the loop.
+        """Never stop on text-only responses.
 
         The model library default stops on text-only responses (no tool calls), but the finance agent
-        should keep looping until the model calls submit_final_result or we hit max_turns.
+        should keep looping until the model calls submit_final_result or a configured limit is hit.
         """
         return False
+
+    kwargs = {}
+    if log_dir is not None:
+        kwargs["log_dir"] = log_dir
 
     return Agent(
         llm=llm,
@@ -94,10 +105,11 @@ def get_agent(
         name="finance",
         config=AgentConfig(
             turn_limit=TurnLimit(max_turns=parameters.max_turns),
-            time_limit=None,
+            time_limit=TimeLimit(max_seconds=MAX_TIME_SECONDS),
         ),
         hooks=AgentHooks(
             before_query=_before_query,
             should_stop=_should_stop,
         ),
+        **kwargs,
     )

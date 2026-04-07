@@ -13,7 +13,7 @@ from tavily import AsyncTavilyClient
 
 from simpleeval import SimpleEval
 
-from .exceptions import retry_http_errors
+from .exceptions import get_retry_policy, retry_http_errors, retry_with_policy
 from .key_rotator import KeyRotator, get_rotator
 
 
@@ -337,23 +337,26 @@ class ParseHtmlPage(Tool):
     }
     required = ["url", "key"]
 
-    @retry_http_errors(429)
     async def _parse_html_page(self, url: str) -> str:
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(
-                    url,
-                    timeout=aiohttp.ClientTimeout(total=60),
-                    headers={"User-Agent": "ValsAI/antoine@vals.ai"},
-                ) as response:
-                    response.raise_for_status()
-                    html_content = await response.text()
-            except Exception as e:
-                if len(str(e)) == 0:
-                    raise TimeoutError(
-                        "Timeout error when parsing HTML page after 60 seconds. The URL might be blocked or the server is taking too long to respond."
-                    )
-                raise
+        @retry_with_policy(get_retry_policy(url))
+        async def _fetch(fetch_url: str) -> str:
+            async with aiohttp.ClientSession() as session:
+                try:
+                    async with session.get(
+                        fetch_url,
+                        timeout=aiohttp.ClientTimeout(total=60),
+                        headers={"User-Agent": "ValsAI/antoine@vals.ai"},
+                    ) as response:
+                        response.raise_for_status()
+                        return await response.text()
+                except Exception as e:
+                    if len(str(e)) == 0:
+                        raise TimeoutError(
+                            "Timeout error when parsing HTML page after 60 seconds. The URL might be blocked or the server is taking too long to respond."
+                        )
+                    raise
+
+        html_content = await _fetch(url)
 
         soup = BeautifulSoup(html_content, "html.parser")
         for script_or_style in soup(["script", "style"]):

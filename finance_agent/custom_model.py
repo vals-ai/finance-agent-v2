@@ -2,11 +2,11 @@ from typing import Any
 
 from model_library.agent import AgentResult, TurnSummary
 from model_library.base import LLMConfig, TokenRetryParams
-from model_library.base.input import TextInput
+from model_library.base.input import SystemInput, TextInput
 from model_library.registry_utils import get_registry_model
 
 from .get_agent import Parameters, get_agent
-from .prompt import INSTRUCTIONS_PROMPT
+from .prompt import QUESTION_PROMPT, SYSTEM_PROMPT
 
 
 def create_override_config(**kwargs: object) -> LLMConfig:
@@ -57,10 +57,12 @@ async def get_custom_model(
         )
 
     async def custom_call(test_input: str, files: dict, context: dict, question_id: str, run_id: str):
-        prompt = INSTRUCTIONS_PROMPT.format(question=test_input)
-
         agent = get_agent(params, llm=llm)
-        result = await agent.run([TextInput(text=prompt)], question_id=question_id, run_id=run_id)
+        result = await agent.run(
+            [SystemInput(text=SYSTEM_PROMPT), TextInput(text=QUESTION_PROMPT.format(question=test_input))],
+            question_id=question_id,
+            run_id=run_id,
+        )
 
         if not result.success and result.final_error:
             print(f"\nFAIL {question_id} failed: [{result.final_error.type}] {result.final_error.message}\n")

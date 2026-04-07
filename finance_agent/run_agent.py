@@ -7,11 +7,11 @@ from typing import Any
 from dotenv import load_dotenv
 from model_library.agent import AgentResult
 from model_library.base import LLMConfig
-from model_library.base.input import TextInput
+from model_library.base.input import SystemInput, TextInput
 from tqdm.asyncio import tqdm
 
 from .get_agent import Parameters, get_agent
-from .prompt import INSTRUCTIONS_PROMPT
+from .prompt import QUESTION_PROMPT, SYSTEM_PROMPT
 from .tools import VALID_TOOLS
 
 
@@ -19,15 +19,18 @@ async def run_tests_parallel(
     questions: list[str],
     max_concurrent: int,
     parameters: Parameters,
+    log_dir: Path | None = None,
 ) -> list[dict[str, Any]]:
     """Run multiple questions in parallel using the agent"""
     semaphore = asyncio.Semaphore(max_concurrent)
 
     async def process_question(question: str, question_index: int):
         async with semaphore:
-            agent = get_agent(parameters)
-            prompt = INSTRUCTIONS_PROMPT.format(question=question)
-            result = await agent.run([TextInput(text=prompt)], question_id=f"q{question_index:03d}")
+            agent = get_agent(parameters, log_dir=log_dir)
+            result = await agent.run(
+                [SystemInput(text=SYSTEM_PROMPT), TextInput(text=QUESTION_PROMPT.format(question=question))],
+                question_id=f"q{question_index:03d}",
+            )
             return result
 
     tasks = [process_question(question, i + 1) for i, question in enumerate(questions)]
@@ -110,10 +113,16 @@ async def main():
         default=1,
         help="Number of parallel requests to make to the model",
     )
+    parser.add_argument(
+        "--log-dir",
+        type=Path,
+        default=Path("logs"),
+        help="Directory where per-question agent logs are written",
+    )
     args = parser.parse_args()
 
-    ENV_FILE = Path(".env")
-    load_dotenv(override=True, dotenv_path=ENV_FILE)
+    env_file = Path(".env")
+    load_dotenv(override=True, dotenv_path=env_file)
 
     if args.question_file:
         with open(args.question_file) as f:
@@ -137,6 +146,7 @@ async def main():
         questions=questions,
         max_concurrent=args.parallelism,
         parameters=parameters,
+        log_dir=args.log_dir,
     )
 
 

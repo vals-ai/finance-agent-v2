@@ -1,7 +1,7 @@
 from .exceptions import retry_http_errors
 from .get_agent import Parameters, get_agent
 from .key_rotator import KeyRotator
-from .prompt import INSTRUCTIONS_PROMPT
+from .prompt import QUESTION_PROMPT, SYSTEM_PROMPT
 from .tools import (
     VALID_TOOLS,
     Calculator,
@@ -15,7 +15,8 @@ from .tools import (
 __all__ = [
     "Calculator",
     "EDGARSearch",
-    "INSTRUCTIONS_PROMPT",
+    "QUESTION_PROMPT",
+    "SYSTEM_PROMPT",
     "KeyRotator",
     "VALID_TOOLS",
     "Parameters",
