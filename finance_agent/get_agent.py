@@ -103,6 +103,7 @@ def get_agent(
         tools=selected_tools,
         name="finance",
         config=AgentConfig(
+            turn_limit=None,
             time_limit=TimeLimit(max_seconds=parameters.max_time_seconds),
         ),
         hooks=AgentHooks(
