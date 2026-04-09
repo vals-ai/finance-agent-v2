@@ -7,11 +7,9 @@ from typing import Any
 from dotenv import load_dotenv
 from model_library.agent import AgentResult
 from model_library.base import LLMConfig
-from model_library.base.input import SystemInput, TextInput
 from tqdm.asyncio import tqdm
 
-from .get_agent import Parameters, get_agent
-from .prompt import QUESTION_PROMPT, SYSTEM_PROMPT
+from .get_agent import Parameters, build_input, get_agent, MAX_TIME_SECONDS
 from .tools import VALID_TOOLS
 
 
@@ -28,7 +26,7 @@ async def run_tests_parallel(
         async with semaphore:
             agent = get_agent(parameters, log_dir=log_dir)
             result = await agent.run(
-                [SystemInput(text=SYSTEM_PROMPT), TextInput(text=QUESTION_PROMPT.format(question=question))],
+                build_input(question),
                 question_id=f"q{question_index:03d}",
             )
             return result
@@ -104,8 +102,14 @@ async def main():
     parser.add_argument(
         "--max-time",
         type=int,
-        default=120 * 60,
-        help="Maximum time in seconds for the agent to run before stopping (default: 7200 = 2 hours)",
+        default=MAX_TIME_SECONDS,
+        help="Maximum time in seconds for the agent to run before stopping (default: 60 minutes)",
+    )
+    parser.add_argument(
+        "--max-turns",
+        type=int,
+        default=50,
+        help="Maximum number of agent turns for local testing (default: 50). The benchmark evaluation workflow uses time limits only.",
     )
     parser.add_argument(
         "--parallelism",
@@ -135,6 +139,7 @@ async def main():
     parameters = Parameters(
         model_name=args.model,
         max_time_seconds=args.max_time,
+        max_turns=args.max_turns,
         tools=args.tools,
         llm_config=LLMConfig(
             max_tokens=args.max_tokens,

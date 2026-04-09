@@ -146,7 +146,7 @@ wheels = [
 
 [[package]]
 name = "anthropic"
-version = "0.86.0"
+version = "0.92.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -158,9 +158,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/37/7a/8b390dc47945d3169875d342847431e5f7d5fa716b2e37494d57cfc1db10/anthropic-0.86.0.tar.gz", hash = "sha256:60023a7e879aa4fbb1fed99d487fe407b2ebf6569603e5047cfe304cebdaa0e5", size = 583820, upload-time = "2026-03-18T18:43:08.017Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/01/2d/fc5c5a369db977efbaa646d77ba42b38a6de4e95789884032b0e2e3fc834/anthropic-0.92.0.tar.gz", hash = "sha256:d1e792ed0692379452a1af6b266df495e973c3695cd0aace2a108b838393cbc4", size = 652420, upload-time = "2026-04-08T16:55:35.37Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/63/5f/67db29c6e5d16c8c9c4652d3efb934d89cb750cad201539141781d8eae14/anthropic-0.86.0-py3-none-any.whl", hash = "sha256:9d2bbd339446acce98858c5627d33056efe01f70435b22b63546fe7edae0cd57", size = 469400, upload-time = "2026-03-18T18:43:06.526Z" },
+    { url = "https://files.pythonhosted.org/packages/c3/21/bf5b5ab10b6932c5c43eaa66b6e3f256de569cf0323d89f9cc281a0d0f39/anthropic-0.92.0-py3-none-any.whl", hash = "sha256:f92a4bd065d5cab90a96b65bb44e473bf7c6fe731a743cd156e9ad1d245c381e", size = 621195, upload-time = "2026-04-08T16:55:33.639Z" },
 ]
 
 [[package]]
@@ -502,7 +502,7 @@ requires-dist = [
     { name = "backoff", specifier = ">=2.2.1" },
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "model-library", specifier = "==0.1.21" },
+    { name = "model-library", specifier = "==0.1.22" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "sec-api", specifier = ">=1.0.32" },
     { name = "simpleeval", specifier = ">=1.0.7" },
@@ -960,7 +960,7 @@ wheels = [
 
 [[package]]
 name = "model-library"
-version = "0.1.21"
+version = "0.1.22"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ai21" },
@@ -980,9 +980,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "xai-sdk" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d3/d1/a987dc681473d2595b397e4ad256ac1b3e119273c7f5f82f138503bc2f6b/model_library-0.1.21.tar.gz", hash = "sha256:f00589a5613c2023f8e3c83836d09ef969de3def97a685b1ab226f69ce3cc62d", size = 374505, upload-time = "2026-03-23T07:55:20.083Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/0b/8c874bd94885fef1b187e74c9ddf1f7f7e2c772258dab5f803a233ad7a94/model_library-0.1.22.tar.gz", hash = "sha256:c750864a29a16fae6b03988862ed746d0be3c7678f05492c53c0569904625ea8", size = 372136, upload-time = "2026-04-09T03:45:49.906Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8d/93/0ab1a1cb81c135d434492638463c5db0115b66db535dd472f2c236580277/model_library-0.1.21-py3-none-any.whl", hash = "sha256:ec0e50ef8accc95ad9eb24da6699c56ffb03355019d8c9f937e2ae32f6181e77", size = 175284, upload-time = "2026-03-23T07:55:18.259Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/0c/559864a94d3a3629ee7d95d5f9cce5b5dc0e614c046f774fd391cc51b128/model_library-0.1.22-py3-none-any.whl", hash = "sha256:2462b75d6c6d338949fe3ab4d8ee16c89ef06b54208da2d32a8bf349dd1e2c74", size = 175257, upload-time = "2026-04-09T03:45:48.385Z" },
 ]
 
 [[package]]

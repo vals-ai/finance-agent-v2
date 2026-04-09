@@ -1,12 +1,13 @@
 from pathlib import Path
 
-from model_library.agent import Agent, AgentConfig, AgentHooks, TimeLimit, TurnResult, default_before_query, truncate_oldest
+from model_library.agent import Agent, AgentConfig, AgentHooks, TimeLimit, TurnLimit, TurnResult, default_before_query, truncate_oldest
 from model_library.base import LLM, LLMConfig, RawResponse, TextInput
-from model_library.base.input import InputItem
+from model_library.base.input import InputItem, SystemInput
 from model_library.exceptions import MaxContextWindowExceededError
 from model_library.registry_utils import get_registry_model
 from pydantic import BaseModel
 
+from .prompt import QUESTION_PROMPT, SYSTEM_PROMPT
 from .tools import (
     VALID_TOOLS,
     Calculator,
@@ -19,14 +20,24 @@ from .tools import (
 )
 
 
-MAX_TIME_SECONDS = 120 * 60  # 2 hours
+MAX_TIME_SECONDS = 60 * 60  # 1 hour
 
 
 class Parameters(BaseModel):
     model_name: str
     max_time_seconds: int = MAX_TIME_SECONDS
+    max_turns: int | None = None
     tools: list[str] = VALID_TOOLS
     llm_config: LLMConfig
+
+
+def build_input(question: str) -> list[InputItem]:
+    return [SystemInput(text=SYSTEM_PROMPT), TextInput(text=QUESTION_PROMPT.format(question=question))]
+
+
+def create_llm(parameters: Parameters) -> LLM:
+    """Create an LLM instance from parameters using the model registry."""
+    return get_registry_model(parameters.model_name, parameters.llm_config)
 
 
 def get_agent(
@@ -36,7 +47,7 @@ def get_agent(
 ) -> Agent:
     """Helper method to instantiate an agent with the given parameters"""
     if llm is None:
-        llm = get_registry_model(parameters.model_name, parameters.llm_config)
+        llm = create_llm(parameters)
 
     available_tools: dict[str, type[Tool]] = {
         "web_search": TavilyWebSearch,
@@ -94,21 +105,17 @@ def get_agent(
         """
         return False
 
-    kwargs = {}
-    if log_dir is not None:
-        kwargs["log_dir"] = log_dir
-
     return Agent(
         llm=llm,
         tools=selected_tools,
         name="finance",
+        log_dir=log_dir or Path("logs"),
         config=AgentConfig(
-            turn_limit=None,
+            turn_limit=TurnLimit(max_turns=parameters.max_turns) if parameters.max_turns else None,
             time_limit=TimeLimit(max_seconds=parameters.max_time_seconds),
         ),
         hooks=AgentHooks(
             before_query=_before_query,
             should_stop=_should_stop,
         ),
-        **kwargs,
     )
