@@ -11,7 +11,7 @@ from model_library.base import LLMConfig
 from pydantic import SecretStr
 from tqdm.asyncio import tqdm
 
-from .get_agent import Parameters, build_input, get_agent
+from .get_agent import Parameters, build_input, get_agent, MAX_TIME_SECONDS
 from .tools import VALID_TOOLS
 
 
@@ -104,7 +104,7 @@ async def main():
     parser.add_argument(
         "--max-time",
         type=int,
-        default=60 * 60,
+        default=MAX_TIME_SECONDS,
         help="Maximum time in seconds for the agent to run before stopping (default: 60 minutes)",
     )
     parser.add_argument(
