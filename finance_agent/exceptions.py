@@ -9,6 +9,12 @@ import httpx
 logger = logging.getLogger(__name__)
 
 
+class RetryExhaustedError(Exception):
+    """Raised when all retry attempts for an HTTP status code have been exhausted."""
+
+    pass
+
+
 RetryPolicy = dict[int, int]  # {status_code: max_tries}
 
 
@@ -73,10 +79,10 @@ def retry_with_policy(policy: RetryPolicy) -> Callable:
     return decorator
 
 
-FALLBACK_RETRY_POLICY: RetryPolicy = {429: 5, 503: 3}
+FALLBACK_RETRY_POLICY: RetryPolicy = {429: 5, 503: 5}
 
 URL_RETRY_POLICIES: dict[str, RetryPolicy] = {
-    "sec.gov": {429: 100, 503: 100},
+    "sec.gov": {429: 20, 503: 20},
 }
 
 
