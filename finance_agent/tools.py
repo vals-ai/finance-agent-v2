@@ -13,7 +13,7 @@ from tavily import AsyncTavilyClient
 
 from simpleeval import SimpleEval
 
-from .exceptions import get_retry_policy, retry_http_errors, retry_with_policy
+from .exceptions import RetryExhaustedError, get_retry_policy, retry_http_errors, retry_with_policy
 from .key_rotator import KeyRotator, get_rotator
 
 
@@ -133,7 +133,7 @@ class TavilyWebSearch(Tool):
             raise ValueError("TAVILY_API_KEY is not set")
         self.client = AsyncTavilyClient(api_key=tavily_api_key)
 
-    @retry_http_errors(429)
+    @retry_http_errors(429, 503, max_tries=8)
     async def _execute_search(
         self,
         search_query: str,
@@ -244,7 +244,7 @@ class EDGARSearch(Tool):
             self._key_rotator = get_rotator("SEC_EDGAR_API_KEY")
         self.sec_api_url: str = "https://api.sec-api.io/full-text-search"
 
-    @retry_http_errors(429, 503)
+    @retry_with_policy({429: 20, 503: 20})
     async def _execute_search(
         self,
         search_query: str,
@@ -314,6 +314,12 @@ class EDGARSearch(Tool):
         try:
             results = await self._execute_search(**args)
             return ToolOutput(output=json.dumps(results, default=str))
+        except aiohttp.ClientResponseError as e:
+            if e.status in (429, 503):
+                raise RetryExhaustedError(f"SEC API retry attempts exhausted for HTTP {e.status}") from e
+            error_msg = str(e)
+            logger.warning(f"EDGAR search failed: {error_msg}")
+            return ToolOutput(output=error_msg, error=error_msg)
         except Exception as e:
             error_msg = str(e)
             logger.warning(f"EDGAR search failed: {error_msg}")
@@ -356,7 +362,12 @@ class ParseHtmlPage(Tool):
                         )
                     raise
 
-        html_content = await _fetch(url)
+        try:
+            html_content = await _fetch(url)
+        except aiohttp.ClientResponseError as e:
+            if e.status in (429, 503) and "sec.gov" in url:
+                raise RetryExhaustedError(f"sec.gov retry attempts exhausted for HTTP {e.status}") from e
+            raise
 
         soup = BeautifulSoup(html_content, "html.parser")
         for script_or_style in soup(["script", "style"]):
@@ -400,6 +411,8 @@ class ParseHtmlPage(Tool):
             text_output = await self._parse_html_page(url)
             tool_result = await self._save_tool_output(text_output, key, state)
             return ToolOutput(output=tool_result)
+        except RetryExhaustedError:
+            raise
         except Exception as e:
             error_msg = str(e)
             logger.warning(f"Parse HTML page failed: {error_msg}")

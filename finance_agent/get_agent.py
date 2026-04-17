@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from model_library.agent import Agent, AgentConfig, AgentHooks, TimeLimit, TurnLimit, TurnResult, default_before_query, truncate_oldest
+from model_library.agent import Agent, AgentConfig, AgentHooks, TimeLimit, ToolCallRecord, TurnLimit, TurnResult, default_before_query, truncate_oldest
 from model_library.base import LLM, LLMConfig, RawResponse, TextInput
 from model_library.base.input import InputItem, SystemInput
 from model_library.exceptions import MaxContextWindowExceededError
@@ -8,6 +8,7 @@ from model_library.registry_utils import get_registry_model
 from pydantic import BaseModel
 
 from .prompt import QUESTION_PROMPT, SYSTEM_PROMPT
+from .exceptions import RetryExhaustedError
 from .tools import (
     VALID_TOOLS,
     Calculator,
@@ -97,6 +98,10 @@ def get_agent(
             history.append(TextInput(text="Continue."))
         return default_before_query(history, last_error)
 
+    def _on_tool_result(record: ToolCallRecord, state: dict) -> None:
+        if record.error and record.error.type == "RetryExhaustedError":
+            raise RetryExhaustedError(record.error.message)
+
     def _should_stop(turn_result: TurnResult) -> bool:
         """Never stop on text-only responses.
 
@@ -117,5 +122,6 @@ def get_agent(
         hooks=AgentHooks(
             before_query=_before_query,
             should_stop=_should_stop,
+            on_tool_result=_on_tool_result,
         ),
     )
