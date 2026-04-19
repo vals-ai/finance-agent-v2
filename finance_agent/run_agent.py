@@ -28,6 +28,7 @@ async def run_tests_parallel(
             result = await agent.run(
                 build_input(question),
                 question_id=f"q{question_index:03d}",
+                atif_export=True,
             )
             return result
 
