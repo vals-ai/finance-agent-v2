@@ -19,7 +19,7 @@ from .key_rotator import KeyRotator, get_rotator
 
 
 MAX_END_DATE = "2026-03-01"
-VALID_TOOLS = ["web_search", "retrieve_information", "parse_html_page", "edgar_search", "calculator", "yahoo_finance"]
+VALID_TOOLS = ["web_search", "retrieve_information", "parse_html_page", "edgar_search", "calculator", "price_history"]
 
 _DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -426,17 +426,17 @@ class ParseHtmlPage(Tool):
             return ToolOutput(output=error_msg, error=error_msg)
 
 
-class YahooFinance(Tool):
-    name = "yahoo_finance"
+class PriceHistory(Tool):
+    name = "price_history"
     description = (
-        "Fetch historical daily price data (OHLCV) from Yahoo Finance for a given ticker and date range. "
+        "Fetch historical daily price data (OHLCV) for a given ticker and date range. "
         "Returns a CSV table with one row per trading day. "
-        "Use this tool for historical price data instead of scraping Yahoo Finance HTML pages."
+        "Use this tool for historical price data instead of scraping financial data pages from the web."
     )
     parameters: dict[str, Any] = {
         "ticker": {
             "type": "string",
-            "description": "The Yahoo Finance ticker symbol.",
+            "description": "The ticker symbol.",
         },
         "start_date": {
             "type": "string",
@@ -463,10 +463,10 @@ class YahooFinance(Tool):
         chart = data.get("chart") or {}
         err = chart.get("error")
         if err:
-            raise ValueError(f"Yahoo Finance error: {err.get('code')}: {err.get('description')}")
+            raise ValueError(f"Price history error: {err.get('code')}: {err.get('description')}")
         results = chart.get("result") or []
         if not results:
-            raise ValueError("Yahoo Finance returned no result")
+            raise ValueError("Price history returned no result")
         result = results[0]
 
         timestamps = result.get("timestamp") or []
@@ -522,7 +522,7 @@ class YahooFinance(Tool):
             return ToolOutput(output=self._chart_to_csv(data))
         except Exception as e:
             error_msg = str(e)
-            logger.warning(f"Yahoo Finance fetch failed: {error_msg}")
+            logger.warning(f"Price history fetch failed: {error_msg}")
             return ToolOutput(output=error_msg, error=error_msg)
 
 

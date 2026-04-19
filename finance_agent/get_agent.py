@@ -18,7 +18,7 @@ from .tools import (
     SubmitFinalResult,
     TavilyWebSearch,
     Tool,
-    YahooFinance,
+    PriceHistory,
 )
 
 
@@ -57,7 +57,7 @@ def get_agent(
         "parse_html_page": ParseHtmlPage,
         "edgar_search": EDGARSearch,
         "calculator": Calculator,
-        "yahoo_finance": YahooFinance,
+        "price_history": PriceHistory,
     }
 
     selected_tools: list[Tool] = []
