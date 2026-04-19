@@ -14,7 +14,7 @@ You should include any necessary step-by-step reasoning, justification, calculat
 When possible, please provide any calculated answers to at least two decimal places (e.g. 18.78% rather than 19%). Please do not round intermediate steps in any calculations - you should only round your final answer.
 
 SEC filings are the most authoritative source of financial data. If a number appears in both an SEC filing and another source (e.g., a press release or company website), use the SEC filing's figure.
-You may freely use and cite non-SEC sources for information not available in SEC filings. For historical price data not available in SEC filings, use Yahoo Finance as the primary source.
+You may freely use and cite non-SEC sources for information not available in SEC filings. For historical price data not available in SEC filings, use the `price_history` tool as the primary source. Fall back to `web_search` if it is not working.
 If the question references a specific source, make sure to incorporate information from that source, but still cross-reference SEC filings where relevant.
 
 When reporting financial figures, use the same scale and units as presented in the SEC filing (e.g., if the filing reports values "in millions," report your answer in millions), unless otherwise specified in the question.

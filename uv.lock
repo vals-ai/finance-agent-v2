@@ -163,6 +163,12 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c3/21/bf5b5ab10b6932c5c43eaa66b6e3f256de569cf0323d89f9cc281a0d0f39/anthropic-0.92.0-py3-none-any.whl", hash = "sha256:f92a4bd065d5cab90a96b65bb44e473bf7c6fe731a743cd156e9ad1d245c381e", size = 621195, upload-time = "2026-04-08T16:55:33.639Z" },
 ]
 
+[package.optional-dependencies]
+aiohttp = [
+    { name = "aiohttp" },
+    { name = "httpx-aiohttp" },
+]
+
 [[package]]
 name = "anyio"
 version = "4.12.1"
@@ -502,7 +508,7 @@ requires-dist = [
     { name = "backoff", specifier = ">=2.2.1" },
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "model-library", specifier = "==0.1.22" },
+    { name = "model-library", specifier = "==0.1.23" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "sec-api", specifier = ">=1.0.32" },
     { name = "simpleeval", specifier = ">=1.0.7" },
@@ -822,6 +828,19 @@ wheels = [
 ]
 
 [[package]]
+name = "httpx-aiohttp"
+version = "0.1.12"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "aiohttp" },
+    { name = "httpx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/63/2c/b894861cecf030fb45675ea24aa55b5722e97c602a163d872fca66c5a6d8/httpx_aiohttp-0.1.12.tar.gz", hash = "sha256:81feec51fd82c0ecfa0e9aaf1b1a6c2591260d5e2bcbeb7eb0277a78e610df2c", size = 275945, upload-time = "2025-12-12T10:12:15.283Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/16/8d/85c9701e9af72ca132a1783e2a54364a90c6da832304416a30fc11196ab2/httpx_aiohttp-0.1.12-py3-none-any.whl", hash = "sha256:5b0eac39a7f360fa7867a60bcb46bb1024eada9c01cbfecdb54dc1edb3fb7141", size = 6367, upload-time = "2025-12-12T10:12:14.018Z" },
+]
+
+[[package]]
 name = "idna"
 version = "3.11"
 source = { registry = "https://pypi.org/simple" }
@@ -960,17 +979,17 @@ wheels = [
 
 [[package]]
 name = "model-library"
-version = "0.1.22"
+version = "0.1.23"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ai21" },
-    { name = "anthropic" },
+    { name = "anthropic", extra = ["aiohttp"] },
     { name = "backoff" },
     { name = "boto3" },
     { name = "google-cloud-storage" },
     { name = "google-genai", extra = ["aiohttp"] },
     { name = "mistralai" },
-    { name = "openai" },
+    { name = "openai", extra = ["aiohttp"] },
     { name = "pillow" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -980,9 +999,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "xai-sdk" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/22/0b/8c874bd94885fef1b187e74c9ddf1f7f7e2c772258dab5f803a233ad7a94/model_library-0.1.22.tar.gz", hash = "sha256:c750864a29a16fae6b03988862ed746d0be3c7678f05492c53c0569904625ea8", size = 372136, upload-time = "2026-04-09T03:45:49.906Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/7d/28e176ee5234d95617748d1515a3c3b4bb818ed51a9ada66c1eab39d56f4/model_library-0.1.23.tar.gz", hash = "sha256:9777443f27ee7294cfa79cb8c4f26ea5f09e3ab1b325324743bcdbdded580171", size = 471062, upload-time = "2026-04-17T22:57:04.201Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1c/0c/559864a94d3a3629ee7d95d5f9cce5b5dc0e614c046f774fd391cc51b128/model_library-0.1.22-py3-none-any.whl", hash = "sha256:2462b75d6c6d338949fe3ab4d8ee16c89ef06b54208da2d32a8bf349dd1e2c74", size = 175257, upload-time = "2026-04-09T03:45:48.385Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/95/fe077ba4148d133d8bf12440f6977133a92f0188e4d6216b6abab4ceaea1/model_library-0.1.23-py3-none-any.whl", hash = "sha256:41c4427f75ea902c31268d1e9b354cb2cacfa78a432860285077a912a2466ae7", size = 184860, upload-time = "2026-04-17T22:57:02.603Z" },
 ]
 
 [[package]]
@@ -1117,6 +1136,12 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b4/15/203d537e58986b5673e7f232453a2a2f110f22757b15921cbdeea392e520/openai-2.29.0.tar.gz", hash = "sha256:32d09eb2f661b38d3edd7d7e1a2943d1633f572596febe64c0cd370c86d52bec", size = 671128, upload-time = "2026-03-17T17:53:49.599Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/b1/35b6f9c8cf9318e3dbb7146cc82dab4cf61182a8d5406fc9b50864362895/openai-2.29.0-py3-none-any.whl", hash = "sha256:b7c5de513c3286d17c5e29b92c4c98ceaf0d775244ac8159aeb1bddf840eb42a", size = 1141533, upload-time = "2026-03-17T17:53:47.348Z" },
+]
+
+[package.optional-dependencies]
+aiohttp = [
+    { name = "aiohttp" },
+    { name = "httpx-aiohttp" },
 ]
 
 [[package]]

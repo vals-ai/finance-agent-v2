@@ -18,6 +18,7 @@ from .tools import (
     SubmitFinalResult,
     TavilyWebSearch,
     Tool,
+    PriceHistory,
 )
 
 
@@ -56,6 +57,7 @@ def get_agent(
         "parse_html_page": ParseHtmlPage,
         "edgar_search": EDGARSearch,
         "calculator": Calculator,
+        "price_history": PriceHistory,
     }
 
     selected_tools: list[Tool] = []
@@ -89,13 +91,17 @@ def get_agent(
     def _before_query(history: list[InputItem], last_error: Exception | None) -> list[InputItem]:
         """Truncate on context window overflow, re-raise all other errors (stops the loop).
 
-        Also injects "Continue." when the previous turn had no tool calls
+        Also injects a nudge to call a tool when the previous turn had no tool calls
         (last item in history is a RawResponse, meaning no ToolResult was appended).
         """
         if isinstance(last_error, MaxContextWindowExceededError):
             return truncate_oldest(history)
         if history and isinstance(history[-1], RawResponse):
-            history.append(TextInput(text="Continue."))
+            history.append(TextInput(text=(
+                "Your last response produced no tool call. "
+                "Call `submit_final_result` if you have a final result, "
+                "otherwise continue with the next tool call."
+            )))
         return default_before_query(history, last_error)
 
     def _on_tool_result(record: ToolCallRecord, state: dict) -> None:

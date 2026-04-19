@@ -3,6 +3,7 @@ import logging
 import math
 import os
 import re
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import aiohttp
@@ -18,7 +19,22 @@ from .key_rotator import KeyRotator, get_rotator
 
 
 MAX_END_DATE = "2026-03-01"
-VALID_TOOLS = ["web_search", "retrieve_information", "parse_html_page", "edgar_search", "calculator"]
+VALID_TOOLS = ["web_search", "retrieve_information", "parse_html_page", "edgar_search", "calculator", "price_history"]
+
+_DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _validate_date_format(field_name: str, value: str) -> None:
+    if not _DATE_REGEX.match(value):
+        raise ValueError(f"Invalid {field_name} format: '{value}'. Expected YYYY-MM-DD.")
+
+
+def _fmt_value(v: Any) -> str:
+    if v is None:
+        return ""
+    if isinstance(v, float):
+        return f"{v:.2f}"
+    return str(v)
 
 
 class Calculator(Tool):
@@ -141,20 +157,15 @@ class TavilyWebSearch(Tool):
         end_date: str = MAX_END_DATE,
         number_of_results: int = 10,
     ) -> list[dict[str, Any]]:
-        DATE_REGEX = r"^\d{4}-\d{2}-\d{2}$"
-
         kwargs = {}
 
         if end_date:
-            if not re.match(DATE_REGEX, end_date):
-                raise ValueError(f"Invalid end_date format: '{end_date}'. Expected YYYY-MM-DD.")
-
+            _validate_date_format("end_date", end_date)
             if end_date > MAX_END_DATE:
                 end_date = MAX_END_DATE
 
         if start_date:
-            if not re.match(DATE_REGEX, start_date):
-                raise ValueError(f"Invalid start_date format: '{start_date}'. Expected YYYY-MM-DD.")
+            _validate_date_format("start_date", start_date)
             if start_date > MAX_END_DATE:
                 start_date = MAX_END_DATE
             if start_date > end_date:
@@ -261,12 +272,8 @@ class EDGARSearch(Tool):
         if ciks is not None and not isinstance(ciks, list):
             raise ValueError(f"The parameter ciks must be a list if provided. Was of type {type(ciks)}")
 
-        date_pattern = r"^\d{4}-\d{2}-\d{2}$"
-        if not re.match(date_pattern, start_date):
-            raise ValueError(f"start_date '{start_date}' is not in yyyy-mm-dd format")
-
-        if not re.match(date_pattern, end_date):
-            raise ValueError(f"end_date '{end_date}' is not in yyyy-mm-dd format")
+        _validate_date_format("start_date", start_date)
+        _validate_date_format("end_date", end_date)
 
         if start_date > MAX_END_DATE:
             start_date = MAX_END_DATE
@@ -419,6 +426,106 @@ class ParseHtmlPage(Tool):
             return ToolOutput(output=error_msg, error=error_msg)
 
 
+class PriceHistory(Tool):
+    name = "price_history"
+    description = (
+        "Fetch historical daily price data (OHLCV) for a given ticker and date range. "
+        "Returns a CSV table with one row per trading day. "
+        "Use this tool for historical price data instead of scraping financial data pages from the web."
+    )
+    parameters: dict[str, Any] = {
+        "ticker": {
+            "type": "string",
+            "description": "The ticker symbol (e.g. 'AAPL', '^IXIC').",
+        },
+        "start_date": {
+            "type": "string",
+            "description": "Start date of the price range in YYYY-MM-DD format (inclusive).",
+        },
+        "end_date": {
+            "type": "string",
+            "description": f"End date of the price range in YYYY-MM-DD format (inclusive). Values later than {MAX_END_DATE} will be clamped to {MAX_END_DATE}.",
+        },
+    }
+    required = ["ticker", "start_date", "end_date"]
+
+    CHART_API_URL = "https://query2.finance.yahoo.com/v8/finance/chart/{ticker}"
+
+    @staticmethod
+    def _to_unix(date_str: str, end_inclusive: bool = False) -> int:
+        dt = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        if end_inclusive:
+            dt += timedelta(days=1)
+        return int(dt.timestamp())
+
+    @staticmethod
+    def _chart_to_csv(data: dict[str, Any]) -> str:
+        chart = data.get("chart") or {}
+        err = chart.get("error")
+        if err:
+            raise ValueError(f"Price history error: {err.get('code')}: {err.get('description')}")
+        results = chart.get("result") or []
+        if not results:
+            raise ValueError("Price history returned no result")
+        result = results[0]
+
+        timestamps = result.get("timestamp") or []
+        indicators = result.get("indicators") or {}
+
+        columns: dict[str, list[Any]] = {}
+        for group in indicators.values():
+            if not isinstance(group, list) or not group:
+                continue
+            for field_name, values in group[0].items():
+                if isinstance(values, list) and len(values) == len(timestamps):
+                    columns[field_name] = values
+
+        header = ["timestamp"] + list(columns.keys())
+        lines = [",".join(header)]
+        for i, ts in enumerate(timestamps):
+            t = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat().replace("+00:00", "Z")
+            row = [t] + [_fmt_value(col[i]) for col in columns.values()]
+            lines.append(",".join(row))
+        return "\n".join(lines)
+
+    @retry_with_policy({429: 5, 503: 5})
+    async def _fetch_chart(self, ticker: str, period1: int, period2: int) -> dict[str, Any]:
+        url = self.CHART_API_URL.format(ticker=ticker)
+        params = {"period1": period1, "period2": period2, "interval": "1d"}
+        headers = {"User-Agent": "ValsAI/antoine@vals.ai"}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=60)
+            ) as response:
+                response.raise_for_status()
+                return await response.json()
+
+    async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
+        try:
+            ticker: str = args["ticker"].strip()
+            start_date: str = args["start_date"]
+            end_date: str = args["end_date"]
+
+            _validate_date_format("start_date", start_date)
+            _validate_date_format("end_date", end_date)
+            if end_date > MAX_END_DATE:
+                end_date = MAX_END_DATE
+            if start_date > MAX_END_DATE:
+                start_date = MAX_END_DATE
+            if start_date > end_date:
+                raise ValueError(f"start_date '{start_date}' is later than end_date '{end_date}'.")
+
+            period1 = self._to_unix(start_date)
+            period2 = self._to_unix(end_date, end_inclusive=True)
+
+            data = await self._fetch_chart(ticker, period1, period2)
+            return ToolOutput(output=self._chart_to_csv(data))
+        except Exception as e:
+            error_msg = str(e)
+            logger.warning(f"Price history fetch failed: {error_msg}")
+            return ToolOutput(output=error_msg, error=error_msg)
+
+
 class RetrieveInformation(Tool):
     name = "retrieve_information"
     description = (
@@ -542,7 +649,6 @@ class RetrieveInformation(Tool):
             ranges_dict = self._validate_inputs(prompt, input_character_ranges, state)
             prompt = self._format_prompt(prompt, ranges_dict, state)
             response = await self._llm.query(prompt)
-
             return ToolOutput(
                 output=response.output_text_str,
                 metadata=response.metadata,

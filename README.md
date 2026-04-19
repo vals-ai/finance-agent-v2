@@ -8,6 +8,7 @@ The agent has access to the following tools:
 - `edgar_search`: Search the SEC's EDGAR database for filings
 - `parse_html_page`: Parse and extract content from web pages
 - `retrieve_information`: Access stored information from previous steps
+- `price_history`: Fetch historical daily OHLCV price data for a ticker and date range
 
 For more details on the benchmark, please refer to our [public website](https://www.vals.ai/benchmarks/finance_agent).
 
