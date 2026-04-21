@@ -369,6 +369,8 @@ class ParseHtmlPage(Tool):
                     raise TimeoutError(
                         "Timeout error when parsing HTML page after 60 seconds. The URL might be blocked or the server is taking too long to respond."
                     )
+                except Exception:
+                    raise
 
         try:
             html_content = await _fetch(url)
