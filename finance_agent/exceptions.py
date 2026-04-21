@@ -50,11 +50,6 @@ def retry_with_policy(policy: RetryPolicy) -> Callable:
 
             def should_retry(exception: Exception) -> bool:
                 code = _get_status_code(exception)
-                if code is None:
-                    for c in policy:
-                        if str(c) in str(exception):
-                            code = c
-                            break
                 if code is None or code not in policy:
                     return False
 

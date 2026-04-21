@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import math
@@ -188,7 +189,8 @@ class TavilyWebSearch(Tool):
 
     async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
         try:
-            results = await self._execute_search(**args)
+            kwargs = {k: v for k, v in args.items() if k in self.parameters}
+            results = await self._execute_search(**kwargs)
             return ToolOutput(output=json.dumps(results, default=str))
         except Exception as e:
             error_msg = str(e)
@@ -319,7 +321,8 @@ class EDGARSearch(Tool):
 
     async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
         try:
-            results = await self._execute_search(**args)
+            kwargs = {k: v for k, v in args.items() if k in self.parameters}
+            results = await self._execute_search(**kwargs)
             return ToolOutput(output=json.dumps(results, default=str))
         except aiohttp.ClientResponseError as e:
             if e.status in (429, 503):
@@ -362,12 +365,10 @@ class ParseHtmlPage(Tool):
                     ) as response:
                         response.raise_for_status()
                         return await response.text()
-                except Exception as e:
-                    if len(str(e)) == 0:
-                        raise TimeoutError(
-                            "Timeout error when parsing HTML page after 60 seconds. The URL might be blocked or the server is taking too long to respond."
-                        )
-                    raise
+                except asyncio.TimeoutError:
+                    raise TimeoutError(
+                        "Timeout error when parsing HTML page after 60 seconds. The URL might be blocked or the server is taking too long to respond."
+                    )
 
         try:
             html_content = await _fetch(url)
@@ -618,26 +619,23 @@ class RetrieveInformation(Tool):
         return ranges_dict
 
     def _format_prompt(self, prompt: str, ranges_dict: dict[str, tuple[int, int]], state: dict[str, Any]) -> str:
-        """Substitute data storage content into prompt placeholders, applying character ranges."""
-        keys = re.findall(r"{{([^{}]+)}}", prompt)
-        formatted_data = {}
+        """Substitute data storage content into prompt placeholders, applying character ranges.
 
-        for key in keys:
+        Uses a single re.sub pass so that document content is never rescanned — this
+        preserves literal curly braces (e.g. JSON the LLM included) and prevents
+        {{key}}-looking sequences inside one document from triggering substitution of
+        another key's placeholder.
+        """
+
+        def replace(match: re.Match[str]) -> str:
+            key = match.group(1)
             doc_content = state[key]
             if key in ranges_dict:
                 start_idx, end_idx = ranges_dict[key]
-                formatted_data[key] = doc_content[start_idx:end_idx]
-            else:
-                formatted_data[key] = doc_content
+                return doc_content[start_idx:end_idx]
+            return doc_content
 
-        formatted_prompt = re.sub(r"{{([^{}]+)}}", r"{\1}", prompt)
-
-        try:
-            return formatted_prompt.format(**formatted_data)
-        except KeyError as e:
-            raise KeyError(
-                f"ERROR: The key {str(e)} was not found in the data storage. Available keys are: {', '.join(state.keys())}"
-            )
+        return re.sub(r"{{([^{}]+)}}", replace, prompt)
 
     async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
         try:
