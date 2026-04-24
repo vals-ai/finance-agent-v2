@@ -8,7 +8,7 @@ The agent has access to the following tools:
 - `edgar_search`: Search the SEC's EDGAR database for filings
 - `parse_html_page`: Parse and extract content from web pages
 - `retrieve_information`: Access stored information from previous steps
-- `price_history`: Fetch historical daily OHLCV price data for a ticker and date range
+- `price_history`: Fetch historical daily OHLCV price data for supported equities/ETFs, crypto, and FX using a single tool with `asset_class` routing
 
 For more details on the benchmark, please refer to our [public website](https://www.vals.ai/benchmarks/finance_agent).
 
@@ -45,6 +45,7 @@ ETC_API_KEY=<etc_api_key>
 # Tool API Keys
 TAVILY_API_KEY=<tavily_api_key>
 SEC_EDGAR_API_KEY=<sec_api_key>  # supports semicolon-separated keys for round-robin rotation, e.g. key1;key2;key3
+PRICING_DATA_API_KEY=<pricing_data_api_key> # Tiingo API key
 ```
 
 You can create a Tavily API key [here](https://tavily.com/), and an SEC API key [here](https://sec-api.io/).

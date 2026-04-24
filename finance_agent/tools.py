@@ -4,7 +4,6 @@ import logging
 import math
 import os
 import re
-from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import aiohttp
@@ -15,27 +14,33 @@ from tavily import AsyncTavilyClient
 
 from simpleeval import SimpleEval
 
-from .exceptions import RetryExhaustedError, get_retry_policy, retry_http_errors, retry_with_policy
+from .exceptions import (
+    RetryExhaustedError,
+    get_retry_policy,
+    retry_http_errors,
+    retry_with_policy,
+)
 from .key_rotator import KeyRotator, get_rotator
 
 
 MAX_END_DATE = "2026-03-01"
-VALID_TOOLS = ["web_search", "retrieve_information", "parse_html_page", "edgar_search", "calculator", "price_history"]
+VALID_TOOLS = [
+    "web_search",
+    "retrieve_information",
+    "parse_html_page",
+    "edgar_search",
+    "calculator",
+    "price_history",
+]
 
 _DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def _validate_date_format(field_name: str, value: str) -> None:
     if not _DATE_REGEX.match(value):
-        raise ValueError(f"Invalid {field_name} format: '{value}'. Expected YYYY-MM-DD.")
-
-
-def _fmt_value(v: Any) -> str:
-    if v is None:
-        return ""
-    if isinstance(v, float):
-        return f"{v:.2f}"
-    return str(v)
+        raise ValueError(
+            f"Invalid {field_name} format: '{value}'. Expected YYYY-MM-DD."
+        )
 
 
 class Calculator(Tool):
@@ -68,10 +73,14 @@ class Calculator(Tool):
             }
         )
 
-    async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
+    async def execute(
+        self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger
+    ) -> ToolOutput:
         expression = args.get("expression", "")
         if not expression:
-            return ToolOutput(output="Error: expression must not be empty", error="empty expression")
+            return ToolOutput(
+                output="Error: expression must not be empty", error="empty expression"
+            )
         try:
             result = self._evaluator.eval(expression)
             return ToolOutput(output=str(result))
@@ -105,7 +114,9 @@ class SubmitFinalResult(Tool):
     }
     required: list[str] = ["final_result"]
 
-    async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
+    async def execute(
+        self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger
+    ) -> ToolOutput:
         try:
             final_result = args["final_result"]
             if not final_result:
@@ -162,13 +173,11 @@ class TavilyWebSearch(Tool):
 
         if end_date:
             _validate_date_format("end_date", end_date)
-            if end_date > MAX_END_DATE:
-                end_date = MAX_END_DATE
+            end_date = min(end_date, MAX_END_DATE)
 
         if start_date:
             _validate_date_format("start_date", start_date)
-            if start_date > MAX_END_DATE:
-                start_date = MAX_END_DATE
+            start_date = min(start_date, MAX_END_DATE)
             if start_date > end_date:
                 raise ValueError(
                     f"Parameter start_date '{start_date}' was set to a date that is later than end_date '{end_date}'"
@@ -187,7 +196,9 @@ class TavilyWebSearch(Tool):
 
         return response.get("results", [])
 
-    async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
+    async def execute(
+        self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger
+    ) -> ToolOutput:
         try:
             kwargs = {k: v for k, v in args.items() if k in self.parameters}
             results = await self._execute_search(**kwargs)
@@ -269,19 +280,20 @@ class EDGARSearch(Tool):
         ciks: list[str] | str | None = None,
     ) -> list[str]:
         if form_types is not None and not isinstance(form_types, list):
-            raise ValueError(f"The parameter form_types must be a list if provided. Was of type {type(form_types)}")
+            raise ValueError(
+                f"The parameter form_types must be a list if provided. Was of type {type(form_types)}"
+            )
 
         if ciks is not None and not isinstance(ciks, list):
-            raise ValueError(f"The parameter ciks must be a list if provided. Was of type {type(ciks)}")
+            raise ValueError(
+                f"The parameter ciks must be a list if provided. Was of type {type(ciks)}"
+            )
 
         _validate_date_format("start_date", start_date)
         _validate_date_format("end_date", end_date)
 
-        if start_date > MAX_END_DATE:
-            start_date = MAX_END_DATE
-
-        if end_date > MAX_END_DATE:
-            end_date = MAX_END_DATE
+        start_date = min(start_date, MAX_END_DATE)
+        end_date = min(end_date, MAX_END_DATE)
 
         if start_date > end_date:
             raise ValueError(
@@ -310,7 +322,9 @@ class EDGARSearch(Tool):
             }
 
             async with aiohttp.ClientSession() as session:
-                async with session.post(self.sec_api_url, json=payload, headers=headers) as response:
+                async with session.post(
+                    self.sec_api_url, json=payload, headers=headers
+                ) as response:
                     response.raise_for_status()
                     result = await response.json()
 
@@ -319,14 +333,18 @@ class EDGARSearch(Tool):
 
         return results
 
-    async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
+    async def execute(
+        self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger
+    ) -> ToolOutput:
         try:
             kwargs = {k: v for k, v in args.items() if k in self.parameters}
             results = await self._execute_search(**kwargs)
             return ToolOutput(output=json.dumps(results, default=str))
         except aiohttp.ClientResponseError as e:
             if e.status in (429, 503):
-                raise RetryExhaustedError(f"SEC API retry attempts exhausted for HTTP {e.status}") from e
+                raise RetryExhaustedError(
+                    f"SEC API retry attempts exhausted for HTTP {e.status}"
+                ) from e
             error_msg = str(e)
             logger.warning(f"EDGAR search failed: {error_msg}")
             return ToolOutput(output=error_msg, error=error_msg)
@@ -376,7 +394,9 @@ class ParseHtmlPage(Tool):
             html_content = await _fetch(url)
         except aiohttp.ClientResponseError as e:
             if e.status in (429, 503) and "sec.gov" in url:
-                raise RetryExhaustedError(f"sec.gov retry attempts exhausted for HTTP {e.status}") from e
+                raise RetryExhaustedError(
+                    f"sec.gov retry attempts exhausted for HTTP {e.status}"
+                ) from e
             raise
 
         soup = BeautifulSoup(html_content, "html.parser")
@@ -390,16 +410,19 @@ class ParseHtmlPage(Tool):
 
         return text
 
-    async def _save_tool_output(self, output: str, key: str, state: dict[str, Any]) -> str:
+    async def _save_tool_output(
+        self, output: str, key: str, state: dict[str, Any]
+    ) -> str:
         if not output:
             raise ValueError("HTML output was empty")
 
         tool_result = ""
         if key in state:
-            tool_result = (
-                "WARNING: The key already exists in the data storage. The new result overwrites the old one.\n"
-            )
-        tool_result += f"SUCCESS: The result has been saved to the data storage under the key: {key}." + "\n"
+            tool_result = "WARNING: The key already exists in the data storage. The new result overwrites the old one.\n"
+        tool_result += (
+            f"SUCCESS: The result has been saved to the data storage under the key: {key}."
+            + "\n"
+        )
 
         state[key] = output
 
@@ -414,7 +437,9 @@ class ParseHtmlPage(Tool):
 
         return tool_result
 
-    async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
+    async def execute(
+        self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger
+    ) -> ToolOutput:
         try:
             url = args["url"]
             key = args["key"]
@@ -432,100 +457,167 @@ class ParseHtmlPage(Tool):
 class PriceHistory(Tool):
     name = "price_history"
     description = (
-        "Fetch historical daily price data (OHLCV) for a given ticker and date range. "
-        "Returns a CSV table with one row per trading day. "
-        "Use this tool for historical price data instead of scraping financial data pages from the web."
+        "Fetch historical daily price data for a specific asset class. "
+        "Returns a CSV table with one row per day. "
+        "Use asset_class='equity' or 'etf' for US-listed stocks/ETFs (e.g. AAPL, SPY), 'crypto' for pairs like BTCUSD (lowercase, no dash), "
+        "or 'fx' for pairs like audusd. Non-US equities and most indices/futures are not covered by the pricing provider. "
+        "Each row includes raw OHLC (open/high/low/close), split- and dividend-adjusted OHLC (adjOpen/adjHigh/adjLow/adjClose), "
+        "raw and adjusted volume, divCash (dividend amount on the date), and splitFactor. "
     )
     parameters: dict[str, Any] = {
         "ticker": {
             "type": "string",
-            "description": "The ticker symbol (e.g. 'AAPL', '^IXIC').",
+            "description": (
+                "Ticker symbol. For equity use the bare symbol (AAPL, SPY). "
+                "For crypto use concatenated lowercase pair like 'btcusd'. "
+                "For FX use concatenated lowercase pair like 'audusd'."
+            ),
         },
         "start_date": {
             "type": "string",
-            "description": "Start date of the price range in YYYY-MM-DD format (inclusive).",
+            "description": "Start date YYYY-MM-DD (inclusive).",
         },
         "end_date": {
             "type": "string",
-            "description": f"End date of the price range in YYYY-MM-DD format (inclusive). Values later than {MAX_END_DATE} will be clamped to {MAX_END_DATE}.",
+            "description": "End date YYYY-MM-DD (inclusive).",
+        },
+        "asset_class": {
+            "type": "string",
+            "enum": ["equity", "etf", "crypto", "fx"],
+            "description": "Asset class used to route to the proper pricing endpoint.",
         },
     }
-    required = ["ticker", "start_date", "end_date"]
+    required = ["ticker", "start_date", "end_date", "asset_class"]
 
-    CHART_API_URL = "https://query2.finance.yahoo.com/v8/finance/chart/{ticker}"
+    EQUITY_URL = "https://api.tiingo.com/tiingo/daily/{ticker}/prices"
+    CRYPTO_URL = "https://api.tiingo.com/tiingo/crypto/prices"
+    FX_URL = "https://api.tiingo.com/tiingo/fx/{pair}/prices"
 
-    @staticmethod
-    def _to_unix(date_str: str, end_inclusive: bool = False) -> int:
-        dt = datetime.strptime(date_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-        if end_inclusive:
-            dt += timedelta(days=1)
-        return int(dt.timestamp())
+    _COLUMNS = [
+        "date",
+        "open",
+        "high",
+        "low",
+        "close",
+        "adjOpen",
+        "adjHigh",
+        "adjLow",
+        "adjClose",
+        "volume",
+        "adjVolume",
+        "divCash",
+        "splitFactor",
+        "volumeNotional",  # crypto only
+        "tradesDone",  # crypto only
+    ]
 
-    @staticmethod
-    def _chart_to_csv(data: dict[str, Any]) -> str:
-        chart = data.get("chart") or {}
-        err = chart.get("error")
-        if err:
-            raise ValueError(f"Price history error: {err.get('code')}: {err.get('description')}")
-        results = chart.get("result") or []
-        if not results:
-            raise ValueError("Price history returned no result")
-        result = results[0]
+    def __init__(self, api_key: str | None = None) -> None:
+        self._api_key = api_key or os.getenv("PRICING_DATA_API_KEY")
+        if not self._api_key:
+            raise ValueError("PRICING_DATA_API_KEY is required for price_history")
 
-        timestamps = result.get("timestamp") or []
-        indicators = result.get("indicators") or {}
+    @retry_with_policy({429: 4, 503: 4})
+    async def _fetch(
+        self, endpoint: str, ticker: str, start_date: str, end_date: str
+    ) -> list[dict[str, Any]]:
+        params: dict[str, Any] = {
+            "startDate": start_date,
+            "endDate": end_date,
+            "format": "json",
+        }
+        if endpoint == "equity":
+            url = self.EQUITY_URL.format(ticker=ticker.upper())
+        elif endpoint == "crypto":
+            url = self.CRYPTO_URL
+            params["tickers"] = ticker.lower()
+            params["resampleFreq"] = "1day"
+        else:  # fx
+            url = self.FX_URL.format(pair=ticker.lower())
+            params["resampleFreq"] = "1day"
 
-        columns: dict[str, list[Any]] = {}
-        for group in indicators.values():
-            if not isinstance(group, list) or not group:
-                continue
-            for field_name, values in group[0].items():
-                if isinstance(values, list) and len(values) == len(timestamps):
-                    columns[field_name] = values
+        headers = {"Authorization": f"Token {self._api_key}"}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                url,
+                params=params,
+                headers=headers,
+                timeout=aiohttp.ClientTimeout(total=60),
+            ) as response:
+                response.raise_for_status()
+                payload = await response.json()
 
-        header = ["timestamp"] + list(columns.keys())
-        lines = [",".join(header)]
-        for i, ts in enumerate(timestamps):
-            t = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat().replace("+00:00", "Z")
-            row = [t] + [_fmt_value(col[i]) for col in columns.values()]
+        # Crypto responses are nested: [{ticker, priceData: [...]}, ...]
+        if endpoint == "crypto":
+            if not payload:
+                return []
+            first = payload[0] if isinstance(payload, list) else payload
+            return first.get("priceData", []) if isinstance(first, dict) else []
+        return payload
+
+    @classmethod
+    def _records_to_csv(cls, records: list[dict[str, Any]]) -> str:
+        # Drop columns that are never populated in this response (e.g. adj*/divCash/splitFactor for crypto/fx).
+        active_cols = ["date"] + [
+            col for col in cls._COLUMNS[1:]
+            if any(r.get(col) is not None for r in records)
+        ]
+        lines = [",".join(active_cols)]
+        for record in records:
+            date_value = record.get("date", "")
+            if isinstance(date_value, str) and "T" in date_value:
+                date_value = date_value.split("T", 1)[0]
+            row = [str(date_value)]
+            for col in active_cols[1:]:
+                value = record.get(col)
+                row.append("N/A" if value is None else str(value))
             lines.append(",".join(row))
         return "\n".join(lines)
 
-    @retry_with_policy({429: 5, 503: 5})
-    async def _fetch_chart(self, ticker: str, period1: int, period2: int) -> dict[str, Any]:
-        url = self.CHART_API_URL.format(ticker=ticker)
-        params = {"period1": period1, "period2": period2, "interval": "1d"}
-        headers = {"User-Agent": "ValsAI/antoine@vals.ai"}
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=60)
-            ) as response:
-                response.raise_for_status()
-                return await response.json()
+    @staticmethod
+    def _route_endpoint(asset_class: str) -> str:
+        normalized = asset_class.strip().lower()
+        if normalized in {"equity", "etf"}:
+            return "equity"
+        if normalized in {"crypto", "fx"}:
+            return normalized
+        raise ValueError(
+            f"Unsupported asset_class '{asset_class}'. Expected one of equity, etf, crypto, fx."
+        )
 
-    async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
+    async def execute(
+        self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger
+    ) -> ToolOutput:
         try:
-            ticker: str = args["ticker"].strip()
-            start_date: str = args["start_date"]
-            end_date: str = args["end_date"]
+            ticker = str(args["ticker"]).strip()
+            start_date = args["start_date"]
+            end_date = args["end_date"]
+            asset_class = str(args.get("asset_class") or "").strip().lower()
 
             _validate_date_format("start_date", start_date)
             _validate_date_format("end_date", end_date)
-            if end_date > MAX_END_DATE:
-                end_date = MAX_END_DATE
-            if start_date > MAX_END_DATE:
-                start_date = MAX_END_DATE
+            start_date = min(start_date, MAX_END_DATE)
+            end_date = min(end_date, MAX_END_DATE)
             if start_date > end_date:
-                raise ValueError(f"start_date '{start_date}' is later than end_date '{end_date}'.")
+                raise ValueError(
+                    f"start_date '{start_date}' is later than end_date '{end_date}'."
+                )
+            if not asset_class:
+                raise ValueError("asset_class is required")
 
-            period1 = self._to_unix(start_date)
-            period2 = self._to_unix(end_date, end_inclusive=True)
-
-            data = await self._fetch_chart(ticker, period1, period2)
-            return ToolOutput(output=self._chart_to_csv(data))
+            endpoint = self._route_endpoint(asset_class)
+            records = await self._fetch(endpoint, ticker, start_date, end_date)
+            if not records:
+                return ToolOutput(
+                    output=f"No pricing data returned for {ticker} ({asset_class}) {start_date}..{end_date}"
+                )
+            return ToolOutput(output=self._records_to_csv(records))
+        except aiohttp.ClientResponseError as e:
+            error_msg = f"Pricing data HTTP {e.status}: {e.message}"
+            logger.warning(error_msg)
+            return ToolOutput(output=error_msg, error=error_msg)
         except Exception as e:
             error_msg = str(e)
-            logger.warning(f"Price history fetch failed: {error_msg}")
+            logger.warning(f"Pricing data fetch failed: {error_msg}")
             return ToolOutput(output=error_msg, error=error_msg)
 
 
@@ -598,8 +690,14 @@ class RetrieveInformation(Tool):
                 raise ValueError(
                     "ERROR: Each item in input_character_ranges must be an object with 'key', 'start', and 'end' fields."
                 )
-            if "key" not in range_spec or "start" not in range_spec or "end" not in range_spec:
-                raise ValueError("ERROR: Each range specification must have 'key', 'start', and 'end' fields.")
+            if (
+                "key" not in range_spec
+                or "start" not in range_spec
+                or "end" not in range_spec
+            ):
+                raise ValueError(
+                    "ERROR: Each range specification must have 'key', 'start', and 'end' fields."
+                )
             ranges_dict[range_spec["key"]] = (range_spec["start"], range_spec["end"])
 
         keys = re.findall(r"{{([^{}]+)}}", prompt)
@@ -620,7 +718,12 @@ class RetrieveInformation(Tool):
 
         return ranges_dict
 
-    def _format_prompt(self, prompt: str, ranges_dict: dict[str, tuple[int, int]], state: dict[str, Any]) -> str:
+    def _format_prompt(
+        self,
+        prompt: str,
+        ranges_dict: dict[str, tuple[int, int]],
+        state: dict[str, Any],
+    ) -> str:
         """Substitute data storage content into prompt placeholders, applying character ranges.
 
         Uses a single re.sub pass so that document content is never rescanned — this
@@ -639,7 +742,9 @@ class RetrieveInformation(Tool):
 
         return re.sub(r"{{([^{}]+)}}", replace, prompt)
 
-    async def execute(self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger) -> ToolOutput:
+    async def execute(
+        self, args: dict[str, Any], state: dict[str, Any], logger: logging.Logger
+    ) -> ToolOutput:
         try:
             prompt: str = args["prompt"]
             input_character_ranges = args.get("input_character_ranges", [])
