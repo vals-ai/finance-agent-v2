@@ -109,7 +109,7 @@ class SubmitFinalResult(Tool):
     parameters: dict[str, Any] = {
         "final_result": {
             "type": "string",
-            "description": "The final result to submit to the agent",
+            "description": "The final result to submit to the user",
         }
     }
     required: list[str] = ["final_result"]
@@ -219,7 +219,7 @@ class EDGARSearch(Tool):
     parameters: dict[str, Any] = {
         "search_query": {
             "type": "string",
-            "description": 'The case-insensitive search-term or phrase to search the contents of fillings and their attachments. This can be a single word, phrase, or combination of words and phrases. Supported search features include wildcards (*), Boolean operators (OR, NOT), and exact phrase matching by enclosing phrases in quotation marks ("exact phrase"). By default, all terms are joined by an implicit AND operator.',
+            "description": 'The case-insensitive search-term or phrase to search the contents of filings and their attachments. This can be a single word, phrase, or combination of words and phrases. Supported search features include wildcards (*), Boolean operators (OR, NOT), and exact phrase matching by enclosing phrases in quotation marks ("exact phrase"). By default, all terms are joined by an implicit AND operator.',
         },
         "form_types": {
             "type": "array",
@@ -248,7 +248,7 @@ class EDGARSearch(Tool):
         },
         "top_n_results": {
             "type": "integer",
-            "description": "(optional) Return only the first N results out of 100 from the page. If not provided, all 100 results will be returned. E.g. if page is 2, and number_of_results is 10, you will receive results 100 to 110.",
+            "description": "(optional) Return only the first N results out of 100 from the page. If not provided, all 100 results will be returned. E.g. if page is 2, and top_n_results is 10, you will receive results 100 to 110.",
             "maximum": 100,
             "default": 100,
         },
@@ -459,7 +459,7 @@ class PriceHistory(Tool):
     description = (
         "Fetch historical daily price data for a specific asset class. "
         "Returns a CSV table with one row per day. "
-        "Use asset_class='equity' or 'etf' for US-listed stocks/ETFs (e.g. AAPL, SPY), 'crypto' for pairs like BTCUSD (lowercase, no dash), "
+        "Use asset_class='equity' or 'etf' for US-listed stocks/ETFs (e.g. AAPL, SPY), 'crypto' for pairs like btcusd (lowercase, no dash), "
         "or 'fx' for pairs like audusd. Non-US equities and most indices/futures are not covered by the pricing provider. "
         "Each row includes raw OHLC (open/high/low/close), split- and dividend-adjusted OHLC (adjOpen/adjHigh/adjLow/adjClose), "
         "raw and adjusted volume, divCash (dividend amount on the date), and splitFactor. "
@@ -600,6 +600,9 @@ class PriceHistory(Tool):
             end_date = args["end_date"]
             asset_class = str(args.get("asset_class") or "").strip().lower()
 
+            if not ticker:
+                raise ValueError("ticker is required")
+
             _validate_date_format("start_date", start_date)
             _validate_date_format("end_date", end_date)
             start_date = min(start_date, MAX_END_DATE)
@@ -720,7 +723,7 @@ class RetrieveInformation(Tool):
         for key in keys:
             if key not in state:
                 raise KeyError(
-                    f"ERROR: The key '{key}' was not found in the data storage. Available keys are: {', '.join(state.keys())}. Use the retrieve_information tool to add keys to the data storage."
+                    f"ERROR: The key '{key}' was not found in the data storage. Available keys are: {', '.join(state.keys())}. Use the parse_html_page tool to add keys to the data storage."
                 )
 
         return ranges_dict

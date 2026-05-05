@@ -4,7 +4,7 @@ You will not be able to interact with the user or ask clarifications, you must a
 You should answer all questions as if the current date is March 1, 2026.
 
 You will have access to a data storage system. You can use this system to store parsed contents of HTML pages retrieved from the web.
-You can then use the retrieve_information tool to apply answer questions or gather information from the stored documents using LLM-based prompts.
+You can then use the retrieve_information tool to answer questions or gather information from the stored documents using LLM-based prompts.
 This data storage system is designed to help you avoid context window issues.
 
 When you have the final answer, you should call the `submit_final_result` tool with it. Your submission will not be processed unless you call this tool.
