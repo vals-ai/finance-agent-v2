@@ -10,7 +10,7 @@ The agent has access to the following tools:
 - `retrieve_information`: Access stored information from previous steps
 - `price_history`: Fetch historical daily OHLCV price data for supported equities/ETFs, crypto, and FX using a single tool with `asset_class` routing
 
-For more details on the benchmark, please refer to our [public website](https://www.vals.ai/benchmarks/finance_agent).
+For more details on the benchmark, please refer to our [public website](https://www.vals.ai/benchmarks/fabv2).
 
 ## Set up
 
