@@ -34,8 +34,6 @@ Once approved, make an account on [platform.vals.ai](https://www.platform.vals.a
 Create a `.env` file in the root of the project and add the following:
 
 ```
-VALS_API_KEY=<api_key>
-
 # LLM API Keys (only set the ones you plan on using)
 OPENAI_API_KEY=<openai_api_key>
 ANTHROPIC_API_KEY=<anthropic_api_key>
