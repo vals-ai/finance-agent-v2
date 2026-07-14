@@ -1,6 +1,7 @@
 import asyncio
 import itertools
 import os
+import random
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -14,8 +15,9 @@ class KeyRotator:
     def __init__(self, keys: list[str], max_concurrent: int = DEFAULT_MAX_CONCURRENT) -> None:
         if not keys:
             raise ValueError("At least one key must be provided")
-        self._keys = keys
-        self._cycle = itertools.cycle(keys)
+        self._keys = keys.copy()
+        random.shuffle(self._keys)
+        self._cycle = itertools.cycle(self._keys)
         self._semaphore = asyncio.Semaphore(max_concurrent)
 
     @classmethod
