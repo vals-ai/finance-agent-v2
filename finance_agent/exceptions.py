@@ -16,6 +16,12 @@ class RetryExhaustedError(Exception):
     pass
 
 
+class SecFilingNotFoundError(Exception):
+    """Raised when EDGAR confirms that a filing accession does not exist."""
+
+    pass
+
+
 RetryPolicy = dict[int, int]  # {status_code: max_tries}
 
 

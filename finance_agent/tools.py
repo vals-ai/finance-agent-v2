@@ -5,6 +5,7 @@ import math
 import os
 import re
 from typing import Any
+from urllib.parse import urlsplit
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -16,6 +17,7 @@ from simpleeval import SimpleEval
 
 from .exceptions import (
     RetryExhaustedError,
+    SecFilingNotFoundError,
     get_retry_policy,
     retry_http_errors,
     retry_with_policy,
@@ -34,6 +36,39 @@ VALID_TOOLS = [
 ]
 
 _DATE_REGEX = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+_SEC_ARCHIVE_FILE_REGEX = re.compile(r"^(/Archives/edgar/data/\d+/\d{18}/)[^/]+$")
+
+
+def _canonical_sec_index_url(url: str) -> str | None:
+    parsed = urlsplit(url)
+    if parsed.scheme != "https" or parsed.netloc.lower() not in {
+        "sec.gov",
+        "www.sec.gov",
+    }:
+        return None
+
+    match = _SEC_ARCHIVE_FILE_REGEX.fullmatch(parsed.path)
+    if match is None:
+        return None
+    return f"https://{parsed.netloc.lower()}{match.group(1)}index.json"
+
+
+async def _missing_sec_index_url(url: str) -> str | None:
+    try:
+        canonical_url = _canonical_sec_index_url(url)
+        if canonical_url is None:
+            return None
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                canonical_url,
+                timeout=aiohttp.ClientTimeout(total=60),
+                headers={"User-Agent": "ValsAI/antoine@vals.ai"},
+                allow_redirects=False,
+            ) as response:
+                return canonical_url if response.status == 404 else None
+    except Exception:
+        return None
 
 
 def _validate_date_format(field_name: str, value: str) -> None:
@@ -393,6 +428,10 @@ class ParseHtmlPage(Tool):
         try:
             html_content = await _fetch(url)
         except aiohttp.ClientResponseError as e:
+            if e.status == 503 and (canonical_url := await _missing_sec_index_url(url)):
+                raise SecFilingNotFoundError(
+                    f"SEC filing not found: {canonical_url}"
+                ) from e
             if e.status in (429, 503) and "sec.gov" in url:
                 raise RetryExhaustedError(
                     f"sec.gov retry attempts exhausted for HTTP {e.status}"
