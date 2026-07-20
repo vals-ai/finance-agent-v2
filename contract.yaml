@@ -1,0 +1,23 @@
+name: fabv2_agent-v1.0.0
+
+install_cmd: bash setup.sh
+
+run_cmd: >-
+  bash /bundle/fabv2_agent-v1.0.0/run.sh
+  "{problem_statement_path}"
+  "{task_id}"
+  "{model}"
+
+final_output: /app/results/valkyrie
+
+output_artifacts:
+  - path: vals_format/config.json
+    source: /app/results/valkyrie/{task_id}/agent_logs/finance/*/*/{task_id}/turns/init/config.json
+  - path: vals_format/result.json
+    source: /app/results/valkyrie/{task_id}/agent_logs/finance/*/*/{task_id}/result.json
+
+defaults:
+  model:
+    type: str
+    required: true
+    description: "Provider-prefixed model key."

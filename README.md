@@ -76,6 +76,27 @@ finance-agent --question-file data/public.txt
 
 The default configuration is the one we used to run the benchmark.
 
+## Valkyrie
+
+Install the published agent from the public registry:
+
+```bash
+valkyrie agent install https://github.com/vals-ai/public-agent-registry/tree/main/agents/fabv2_agent-v1.0.0
+```
+
+Run a small public-dataset slice with provider and tool credentials supplied
+through your Valkyrie configuration:
+
+```bash
+valkyrie run start \
+  --benchmark fabv2-google \
+  --dataset public \
+  --agent fabv2_agent-v1.0.0 \
+  --model openai/gpt-4o \
+  --slice :1 \
+  --concurrency 1
+```
+
 ### List of Models
 
 A list of available models can be found at our [model library](https://github.com/vals-ai/model-library/blob/main/model_library/config/all_models.json), and also by running `make browse-models` in the model library repository.
