@@ -1,14 +1,25 @@
 from pathlib import Path
 
-from model_library.agent import Agent, AgentConfig, AgentHooks, TimeLimit, ToolCallRecord, TurnLimit, TurnResult, default_before_query, truncate_oldest
+from model_library.agent import (
+    Agent,
+    AgentConfig,
+    AgentHooks,
+    TimeLimit,
+    ToolCallRecord,
+    TurnLimit,
+    TurnResult,
+    default_before_query,
+    truncate_oldest,
+)
 from model_library.base import LLM, LLMConfig, RawResponse, TextInput
 from model_library.base.input import InputItem, SystemInput
 from model_library.exceptions import MaxContextWindowExceededError
 from model_library.registry_utils import get_registry_model
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from .prompt import QUESTION_PROMPT, SYSTEM_PROMPT
 from .exceptions import RetryExhaustedError
+from .tool_budget import BudgetedTool, ToolBudget, budget_instructions
 from .tools import (
     VALID_TOOLS,
     Calculator,
@@ -30,11 +41,28 @@ class Parameters(BaseModel):
     max_time_seconds: int = MAX_TIME_SECONDS
     max_turns: int | None = None
     tools: list[str] = VALID_TOOLS
+    tool_budget_usd: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    tool_costs_usd: dict[str, float] = Field(default_factory=dict)
     llm_config: LLMConfig
 
 
-def build_input(question: str) -> list[InputItem]:
-    return [SystemInput(text=SYSTEM_PROMPT), TextInput(text=QUESTION_PROMPT.format(question=question))]
+def resolved_tool_costs(parameters: Parameters) -> dict[str, float]:
+    return {name: parameters.tool_costs_usd.get(name, 1.0) for name in parameters.tools}
+
+
+def build_input(question: str, parameters: Parameters | None = None) -> list[InputItem]:
+    budget_prompt = (
+        budget_instructions(parameters.tool_budget_usd, resolved_tool_costs(parameters))
+        if parameters
+        else ""
+    )
+    system_prompt = (
+        SYSTEM_PROMPT if not budget_prompt else f"{SYSTEM_PROMPT}\n\n{budget_prompt}"
+    )
+    return [
+        SystemInput(text=system_prompt),
+        TextInput(text=QUESTION_PROMPT.format(question=question)),
+    ]
 
 
 def create_llm(parameters: Parameters) -> LLM:
@@ -63,12 +91,23 @@ def get_agent(
     selected_tools: list[Tool] = []
     for tool_name in parameters.tools:
         if tool_name not in available_tools:
-            raise Exception(f"Tool {tool_name} not found in tools. Available tools: {available_tools.keys()}")
+            raise Exception(
+                f"Tool {tool_name} not found in tools. Available tools: {available_tools.keys()}"
+            )
         tool_cls = available_tools[tool_name]
         if tool_name == "retrieve_information":
             selected_tools.append(tool_cls(llm=llm))  # type: ignore[call-arg]
         else:
             selected_tools.append(tool_cls())  # type: ignore[call-arg]
+
+    if parameters.tool_budget_usd is not None:
+        unknown_costs = set(parameters.tool_costs_usd) - set(parameters.tools)
+        if unknown_costs:
+            raise ValueError(
+                f"Tool costs provided for unavailable tools: {sorted(unknown_costs)}"
+            )
+        budget = ToolBudget(parameters.tool_budget_usd, resolved_tool_costs(parameters))
+        selected_tools = [BudgetedTool(tool, budget) for tool in selected_tools]
 
     selected_tools.append(SubmitFinalResult())
 
@@ -88,7 +127,9 @@ def get_agent(
     #   _should_stop=False means the only clean exit (no final_error) is the done tool break,
     #   and default_determine_answer finds the done record before reaching the text fallback.
 
-    def _before_query(history: list[InputItem], last_error: Exception | None) -> list[InputItem]:
+    def _before_query(
+        history: list[InputItem], last_error: Exception | None
+    ) -> list[InputItem]:
         """Truncate on context window overflow, re-raise all other errors (stops the loop).
 
         Also injects a nudge to call a tool when the previous turn had no tool calls
@@ -97,11 +138,15 @@ def get_agent(
         if isinstance(last_error, MaxContextWindowExceededError):
             return truncate_oldest(history)
         if history and isinstance(history[-1], RawResponse):
-            history.append(TextInput(text=(
-                "Your last response produced no tool call. "
-                "Call `submit_final_result` if you have a final result, "
-                "otherwise continue with the next tool call."
-            )))
+            history.append(
+                TextInput(
+                    text=(
+                        "Your last response produced no tool call. "
+                        "Call `submit_final_result` if you have a final result, "
+                        "otherwise continue with the next tool call."
+                    )
+                )
+            )
         return default_before_query(history, last_error)
 
     def _on_tool_result(record: ToolCallRecord, state: dict) -> None:
@@ -122,7 +167,9 @@ def get_agent(
         name="finance",
         log_dir=log_dir or Path("logs"),
         config=AgentConfig(
-            turn_limit=TurnLimit(max_turns=parameters.max_turns) if parameters.max_turns else None,
+            turn_limit=TurnLimit(max_turns=parameters.max_turns)
+            if parameters.max_turns
+            else None,
             time_limit=TimeLimit(max_seconds=parameters.max_time_seconds),
         ),
         hooks=AgentHooks(

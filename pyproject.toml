@@ -35,6 +35,7 @@ dev = [
   "basedpyright",
   # env
   "dotenv",
+  "pytest",
 ]
 
 [project.scripts]

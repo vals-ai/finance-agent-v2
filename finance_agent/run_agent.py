@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -9,8 +10,36 @@ from model_library.agent import AgentResult
 from model_library.base import LLMConfig
 from tqdm.asyncio import tqdm
 
-from .get_agent import Parameters, build_input, get_agent, MAX_TIME_SECONDS
+from .get_agent import (
+    MAX_TIME_SECONDS,
+    Parameters,
+    build_input,
+    get_agent,
+    resolved_tool_costs,
+)
 from .tools import VALID_TOOLS
+
+
+def parse_tool_costs(values: list[str]) -> dict[str, float]:
+    costs: dict[str, float] = {}
+    for value in values:
+        try:
+            name, raw_cost = value.split("=", 1)
+            cost = float(raw_cost)
+        except ValueError as exc:
+            raise argparse.ArgumentTypeError(
+                f"Invalid tool cost '{value}'; expected TOOL=USD"
+            ) from exc
+        if name not in VALID_TOOLS:
+            raise argparse.ArgumentTypeError(
+                f"Unknown tool '{name}'; choose from {VALID_TOOLS}"
+            )
+        if not math.isfinite(cost) or cost < 0:
+            raise argparse.ArgumentTypeError(
+                f"Tool cost must be a finite non-negative number: {value}"
+            )
+        costs[name] = cost
+    return costs
 
 
 async def run_tests_parallel(
@@ -26,7 +55,7 @@ async def run_tests_parallel(
         async with semaphore:
             agent = get_agent(parameters, log_dir=log_dir)
             result = await agent.run(
-                build_input(question),
+                build_input(question, parameters),
                 question_id=f"q{question_index:03d}",
                 atif_export=True,
             )
@@ -39,11 +68,17 @@ async def run_tests_parallel(
     formatted_results = []
     for question, result in zip(questions, results):
         if isinstance(result, Exception):
-            formatted_results.append({"question": question, "success": False, "error": str(result)})
+            formatted_results.append(
+                {"question": question, "success": False, "error": str(result)}
+            )
             print(f"\nFAIL Question failed: {question}\n   Error: {result}\n")
         else:
             formatted_results.append(
-                {"question": question, "success": result.success, "result": result.model_dump(mode="json")}
+                {
+                    "question": question,
+                    "success": result.success,
+                    "result": result.model_dump(mode="json"),
+                }
             )
             if not result.success and result.final_error:
                 print(
@@ -62,12 +97,27 @@ async def run_tests_parallel(
         with open(results_file, "w") as f:
             json.dump(formatted_results, f, indent=2)
         print(f"\nResults saved to: {results_file}")
+        if parameters.tool_budget_usd is not None:
+            budget_file = results_dir / "tool_budget.json"
+            with open(budget_file, "w") as f:
+                json.dump(
+                    {
+                        "budget_usd_per_question": parameters.tool_budget_usd,
+                        "costs_usd": resolved_tool_costs(parameters),
+                        "charging_policy": "accepted calls are charged; blocked calls are not; submit is free",
+                    },
+                    f,
+                    indent=2,
+                )
+            print(f"Tool-budget configuration saved to: {budget_file}")
 
     return formatted_results
 
 
 async def main():
-    parser = argparse.ArgumentParser(description="Run the harness for the finance agent benchmark")
+    parser = argparse.ArgumentParser(
+        description="Run the harness for the finance agent benchmark"
+    )
     parser.add_argument(
         "--max-tokens",
         type=int,
@@ -80,7 +130,9 @@ async def main():
         default=1.0,
         help="Temperature for model generation",
     )
-    parser.add_argument("--questions", type=str, nargs="+", help="List of questions to process")
+    parser.add_argument(
+        "--questions", type=str, nargs="+", help="List of questions to process"
+    )
     parser.add_argument(
         "--model",
         type=str,
@@ -113,6 +165,19 @@ async def main():
         help="Maximum number of agent turns (default: unlimited, time limit only)",
     )
     parser.add_argument(
+        "--tool-budget-usd",
+        type=float,
+        default=None,
+        help="Hard per-question budget for tools (disabled by default)",
+    )
+    parser.add_argument(
+        "--tool-cost",
+        action="append",
+        default=[],
+        metavar="TOOL=USD",
+        help="Override a tool's cost; repeat as needed (default: $1 per enabled tool)",
+    )
+    parser.add_argument(
         "--parallelism",
         type=int,
         default=1,
@@ -135,13 +200,22 @@ async def main():
     elif args.questions:
         questions = args.questions
     else:
-        raise Exception("No questions provided. One of --question-file or --questions must be used.")
+        raise Exception(
+            "No questions provided. One of --question-file or --questions must be used."
+        )
+
+    try:
+        tool_costs_usd = parse_tool_costs(args.tool_cost)
+    except argparse.ArgumentTypeError as exc:
+        parser.error(str(exc))
 
     parameters = Parameters(
         model_name=args.model,
         max_time_seconds=args.max_time,
         max_turns=args.max_turns,
         tools=args.tools,
+        tool_budget_usd=args.tool_budget_usd,
+        tool_costs_usd=tool_costs_usd,
         llm_config=LLMConfig(
             max_tokens=args.max_tokens,
             temperature=args.temperature,

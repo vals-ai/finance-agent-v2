@@ -74,6 +74,34 @@ You can also specify a list of questions in a text file, one question per line:
 finance-agent --question-file data/public.txt
 ```
 
+### Tool-budget experiment
+
+Use `--tool-budget-usd` to impose a hard, per-question budget on tool calls. Each enabled tool costs $1 by default,
+so this runs every question with at most five accepted calls:
+
+```
+finance-agent \
+  --question-file data/public.txt \
+  --model openai/gpt-5.2-2025-12-11 \
+  --tool-budget-usd 5
+```
+
+Override individual prices by repeating `--tool-cost`:
+
+```
+finance-agent \
+  --questions "What was Apple's revenue in 2023?" \
+  --tool-budget-usd 5 \
+  --tool-cost web_search=1 \
+  --tool-cost edgar_search=2 \
+  --tool-cost calculator=0.25
+```
+
+The budget resets for every question. Accepted calls are charged even if the underlying tool fails; calls that would
+exceed the remaining budget are rejected before execution and are not charged. `submit_final_result` is free, so an
+agent can always answer with the evidence it has already gathered. Omitting `--tool-budget-usd` preserves the normal
+benchmark behavior. Budgeted runs write their exact pricing configuration to `tool_budget.json` beside `results.json`.
+
 The default configuration is the one we used to run the benchmark.
 
 ### List of Models
