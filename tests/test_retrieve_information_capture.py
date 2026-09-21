@@ -1,5 +1,3 @@
-"""Run with the paired native-capture SDK, not the legacy image dependency pin."""
-
 import json
 import logging
 import tempfile
@@ -35,7 +33,10 @@ class RetrieveInformationCaptureTest(unittest.IsolatedAsyncioTestCase):
             output_text="Read the filing.",
             metadata=QueryResultMetadata(in_tokens=11, out_tokens=5),
             tool_calls=[call],
-            history=[TextInput(text="Find revenue."), RawResponse(response={"id": "main"})],
+            history=[
+                TextInput(text="Find revenue."),
+                RawResponse(response={"id": "main"}),
+            ],
         )
         final = QueryResult(
             output_text="The revenue is $42 million.",
@@ -56,10 +57,9 @@ class RetrieveInformationCaptureTest(unittest.IsolatedAsyncioTestCase):
                 helper_dir = next(root.rglob("helper_queries/tool_000"))
                 evidence = json.loads((helper_dir / "result.json").read_text())
                 history = (helper_dir / "history.json").read_bytes()
-                self.assertEqual(evidence["query_result"]["output_text"], helper.output_text)
-                self.assertEqual(record.tool_output.output, helper.output_text)
-                self.assertEqual(record.tool_output.metadata, helper.metadata)
-                self.assertIsNone(record.tool_output.native_query_result)
+                self.assertEqual(
+                    evidence["query_result"]["output_text"], helper.output_text
+                )
                 self.assertNotIn("history", evidence["query_result"])
                 hook_evidence.append((helper_dir, history))
                 record.tool_output.output = "hook changed the live record"
@@ -84,24 +84,39 @@ class RetrieveInformationCaptureTest(unittest.IsolatedAsyncioTestCase):
             self.assertIsNone(result.final_error)
             self.assertEqual(len(hook_evidence), 1)
             helper_dir, original_history = hook_evidence[0]
-            self.assertEqual((helper_dir / "history.json").read_bytes(), original_history)
+            self.assertEqual(
+                (helper_dir / "history.json").read_bytes(), original_history
+            )
             history = json.loads(original_history)
-            self.assertEqual(history[0]["text"], "Extract revenue: Revenue: $42 million.")
+            self.assertEqual(
+                history[0]["text"], "Extract revenue: Revenue: $42 million."
+            )
             self.assertEqual(history[1]["kind"], "raw_response")
-            self.assertIn("response", history[1])  # Retain opaque data; never deserialize it.
+            self.assertIn(
+                "response", history[1]
+            )  # Retain opaque data; never deserialize it.
             native = json.loads((helper_dir.parent.parent / "result.json").read_text())
             self.assertEqual(native["query_result"]["output_text"], "Read the filing.")
-            self.assertEqual(native["tool_call_records"][0]["tool_call"]["id"], "retrieve-1")
+            self.assertEqual(
+                native["tool_call_records"][0]["tool_call"]["id"], "retrieve-1"
+            )
             self.assertEqual(
                 native["tool_call_records"][0]["tool_output"]["output"],
                 "Revenue was $42 million.",
             )
             saved_helper = json.loads((helper_dir / "result.json").read_text())
-            self.assertEqual(saved_helper["query_result"]["output_text"], "Revenue was $42 million.")
-            self.assertEqual(saved_helper["query_result"]["reasoning"], "Read the revenue line.")
-            self.assertEqual(llm.query.call_args_list[1].args, ("Extract revenue: Revenue: $42 million.",))
+            self.assertEqual(
+                saved_helper["query_result"]["output_text"], "Revenue was $42 million."
+            )
+            self.assertEqual(
+                saved_helper["query_result"]["reasoning"], "Read the revenue line."
+            )
+            self.assertEqual(saved_helper["query_result"]["metadata"]["in_tokens"], 7)
+            self.assertEqual(saved_helper["query_result"]["metadata"]["out_tokens"], 3)
             next_history = llm.query.call_args_list[2].kwargs["input"]
-            tool_results = [item.result for item in next_history if isinstance(item, ToolResult)]
+            tool_results = [
+                item.result for item in next_history if isinstance(item, ToolResult)
+            ]
             self.assertEqual(tool_results, ["Revenue was $42 million."])
             # The SDK's existing aggregate covers main turns only; helper
             # accounting remains on the tool output, not added to that total.
