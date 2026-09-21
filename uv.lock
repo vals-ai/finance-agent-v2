@@ -523,7 +523,7 @@ requires-dist = [
     { name = "backoff", specifier = ">=2.2.1" },
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "model-library", specifier = "==0.1.29" },
+    { name = "model-library", specifier = "==0.1.33" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "sec-api", specifier = ">=1.0.32" },
     { name = "simpleeval", specifier = ">=1.0.7" },
@@ -989,6 +989,15 @@ wheels = [
 ]
 
 [[package]]
+name = "jsonpath-python"
+version = "1.1.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/98/18/4ca8742534a5993ff383f7602e325ce2d5d7cc93d72ac5e1cdedbea8a458/jsonpath_python-1.1.6.tar.gz", hash = "sha256:dded9932b4ec41fb8726e09c83afa4e6be618f938c2db287cc2a81723c639671", size = 88178, upload-time = "2026-05-07T01:26:34.482Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/8a/1270a6803bd821cbfcdda387eaa13cb41a7b1f7b9bd145979b3bfb9d6cb7/jsonpath_python-1.1.6-py3-none-any.whl", hash = "sha256:a1c50afd8d3fbbaf47a4873bc890dcb3c15da96f5c020327977d844d8731a2d4", size = 14453, upload-time = "2026-05-07T01:26:33.306Z" },
+]
+
+[[package]]
 name = "markdown-it-py"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1011,25 +1020,26 @@ wheels = [
 
 [[package]]
 name = "mistralai"
-version = "2.0.5"
+version = "2.4.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eval-type-backport" },
     { name = "httpx" },
+    { name = "jsonpath-python" },
     { name = "opentelemetry-api" },
     { name = "opentelemetry-semantic-conventions" },
     { name = "pydantic" },
     { name = "python-dateutil" },
     { name = "typing-inspection" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1b/88/ebef923a105ee59ce3fabe7e69a1abe356ae866d22eb6007e38f585f1487/mistralai-2.0.5.tar.gz", hash = "sha256:9648dc8a13e32f1433fcc51554233c0bfab205a66e26e3edc47f967198194fb5", size = 321456, upload-time = "2026-03-18T15:32:21.478Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8e/3f/5624d57c5897c83c55d3e4c7dd4127de42ad14fd3183e26566cdc7dca1bf/mistralai-2.4.5.tar.gz", hash = "sha256:ef165bb004ec4423cbf19a440bf0983ca0c3fc92ab12a35ebca097bdf418e33a", size = 424611, upload-time = "2026-05-07T11:46:43.888Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/ab/a565e4bec9b5496eb3b44b8799b6ad8378b2cd0be4cd5e6b7d098e8cedcc/mistralai-2.0.5-py3-none-any.whl", hash = "sha256:0b4a14dd1d9218abfe9e391bdaf1e2e852d44e6289138dd09bf6901f2c91a402", size = 720571, upload-time = "2026-03-18T15:32:22.849Z" },
+    { url = "https://files.pythonhosted.org/packages/1b/48/2c5c4f853dec32a625c1a3d23809b80cf2e135c3441fe1764f72910dfea9/mistralai-2.4.5-py3-none-any.whl", hash = "sha256:bf3b6550258ab16dec8547b90e9c18bebf9099f55b7fc25a884bf0bbeffced0f", size = 995999, upload-time = "2026-05-07T11:46:41.915Z" },
 ]
 
 [[package]]
 name = "model-library"
-version = "0.1.29"
+version = "0.1.33"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ai21" },
@@ -1037,6 +1047,7 @@ dependencies = [
     { name = "anthropic", extra = ["aiohttp"] },
     { name = "backoff" },
     { name = "boto3" },
+    { name = "google-auth" },
     { name = "google-cloud-storage" },
     { name = "google-genai", extra = ["aiohttp"] },
     { name = "httpx", extra = ["http2"] },
@@ -1051,11 +1062,12 @@ dependencies = [
     { name = "rich" },
     { name = "tiktoken" },
     { name = "typing-extensions" },
+    { name = "websockets" },
     { name = "xai-sdk" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/57/de/e91ef206caf800632b51be94164eaf6426258e3ab1f03c3757d007a86ad5/model_library-0.1.29.tar.gz", hash = "sha256:701f5142dfc6574525aeeb76d77f8e51b001de27a19b32de019fb37788918309", size = 849733, upload-time = "2026-07-29T06:06:46.881Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3e/af/ec0f8dbbf002fc3d74558eb82387a74bfb6c235bf0cd1c4d9de095976e8a/model_library-0.1.33.tar.gz", hash = "sha256:c0824c5c9c6a9f8862e468fdce2dd81fef5cc40599565091c0e77fe13a66631b", size = 1061628, upload-time = "2026-09-21T03:53:58.987Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/30/48/73dfdc90e15a6a91fd2655c70a21de8c8d3c294fb1e25b3689ec51656071/model_library-0.1.29-py3-none-any.whl", hash = "sha256:c1a3fd4f9d7ec3aaacf3756d798831ccfb3b254387109445a9cd890ac6d757e3", size = 355880, upload-time = "2026-07-29T06:06:45.321Z" },
+    { url = "https://files.pythonhosted.org/packages/18/24/f426fbf6c006800650cebb7bd2f942b218a295f245cf106f20a01ebd0c0c/model_library-0.1.33-py3-none-any.whl", hash = "sha256:1151e8b1ca59b182929ecfed47fa65b28b9a128613b4d64d8d0f82e0a5129fd9", size = 455333, upload-time = "2026-09-21T03:53:57.382Z" },
 ]
 
 [[package]]
@@ -1175,7 +1187,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "2.29.0"
+version = "2.54.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1187,9 +1199,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b4/15/203d537e58986b5673e7f232453a2a2f110f22757b15921cbdeea392e520/openai-2.29.0.tar.gz", hash = "sha256:32d09eb2f661b38d3edd7d7e1a2943d1633f572596febe64c0cd370c86d52bec", size = 671128, upload-time = "2026-03-17T17:53:49.599Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/50/9a/8c75e8c8a5b407a0586faeb2afac91674ff955c191ecc1d6d3b6669f6788/openai-2.54.0.tar.gz", hash = "sha256:e3e6f8bc1ba30ddf381ace1a14340eed381cb984a1a59bd0f34b5be3b5d49cfa", size = 1100285, upload-time = "2026-08-11T18:46:59.035Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d0/b1/35b6f9c8cf9318e3dbb7146cc82dab4cf61182a8d5406fc9b50864362895/openai-2.29.0-py3-none-any.whl", hash = "sha256:b7c5de513c3286d17c5e29b92c4c98ceaf0d775244ac8159aeb1bddf840eb42a", size = 1141533, upload-time = "2026-03-17T17:53:47.348Z" },
+    { url = "https://files.pythonhosted.org/packages/64/a8/bb76c7356de8ad57f59d5ff993d434df0607f07f08bcc9c9a5c275e399c0/openai-2.54.0-py3-none-any.whl", hash = "sha256:89089789197ccdb87f173a03145ed1598d00795220c93e96cf712b1cbf5e5f2b", size = 1660351, upload-time = "2026-08-11T18:46:56.684Z" },
 ]
 
 [package.optional-dependencies]
@@ -1975,7 +1987,7 @@ wheels = [
 
 [[package]]
 name = "xai-sdk"
-version = "1.9.1"
+version = "1.19.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1986,10 +1998,11 @@ dependencies = [
     { name = "protobuf" },
     { name = "pydantic" },
     { name = "requests" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a6/fa/ec15a3511a96c615ff2650d8aa60b7d1c7684515db94e925e9c8fb460fc3/xai_sdk-1.9.1.tar.gz", hash = "sha256:0406728c540c169041d0440b964278cfafa19240e1c3184f175c205f2253a836", size = 397879, upload-time = "2026-03-19T22:57:47.112Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/db/85/85ae73cbc9de7e1529e87a5eb807fa11727dd59eac887957c87c0e721893/xai_sdk-1.19.0.tar.gz", hash = "sha256:65733bfb83826b10872b8c8af58003104cbd33ce69f0fdfc0d52bb670de7b0e7", size = 466299, upload-time = "2026-08-18T18:02:06.402Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/27/5d/62c394d46e56e43989b34977b490f84bd60ff715e8ea696880f63546b8be/xai_sdk-1.9.1-py3-none-any.whl", hash = "sha256:3f313f1238d847ec08401894c42bf91f034fdeae04fe279c974b0e2a9644573d", size = 247192, upload-time = "2026-03-19T22:57:45.447Z" },
+    { url = "https://files.pythonhosted.org/packages/bc/b5/6f6783b97fb3a5498eb852ccaa706e1a2c0de2409480e3c99428e85234fe/xai_sdk-1.19.0-py3-none-any.whl", hash = "sha256:4af1a629ad9304d0b05fa052d84ce77b7b61242a6d59d5936b692fec95fb52c1", size = 278826, upload-time = "2026-08-18T18:02:04.892Z" },
 ]
 
 [[package]]
