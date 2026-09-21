@@ -767,6 +767,7 @@ class RetrieveInformation(Tool):
             return ToolOutput(
                 output=response.output_text_str,
                 metadata=response.metadata,
+                native_query_result=response,
             )
         except Exception as e:
             error_msg = str(e)
