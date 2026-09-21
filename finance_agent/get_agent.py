@@ -1,11 +1,12 @@
+import os
 from pathlib import Path
 
 from model_library.agent import Agent, AgentConfig, AgentHooks, TimeLimit, ToolCallRecord, TurnLimit, TurnResult, default_before_query, truncate_oldest
 from model_library.base import LLM, LLMConfig, RawResponse, TextInput
 from model_library.base.input import InputItem, SystemInput
 from model_library.exceptions import MaxContextWindowExceededError
-from model_library.registry_utils import get_registry_model
-from pydantic import BaseModel
+from model_library.registry_utils import get_raw_model, get_registry_model
+from pydantic import BaseModel, SecretStr
 
 from .prompt import QUESTION_PROMPT, SYSTEM_PROMPT
 from .exceptions import RetryExhaustedError
@@ -22,7 +23,7 @@ from .tools import (
 )
 
 
-MAX_TIME_SECONDS = 60 * 60  # 1 hour
+MAX_TIME_SECONDS = 2 * 60 * 60  # 2 hours
 
 
 class Parameters(BaseModel):
@@ -38,8 +39,35 @@ def build_input(question: str) -> list[InputItem]:
 
 
 def create_llm(parameters: Parameters) -> LLM:
-    """Create an LLM instance from parameters using the model registry."""
-    return get_registry_model(parameters.model_name, parameters.llm_config)
+    """Create an LLM instance from parameters using the model registry.
+
+    With CUSTOM_ENDPOINT set, bypass the registry and target the given
+    OpenAI-compatible endpoint instead, so a model id the registry does not know
+    can still be run.
+    """
+    endpoint = os.environ.get("CUSTOM_ENDPOINT")
+    if not endpoint:
+        return get_registry_model(parameters.model_name, parameters.llm_config)
+
+    api_key = os.environ.get("CUSTOM_API_KEY")
+    if not api_key:
+        raise ValueError(
+            "CUSTOM_ENDPOINT is set but CUSTOM_API_KEY is not; the custom endpoint "
+            "needs its own key. Without it the provider's default key (e.g. "
+            "OPENAI_API_KEY) would be sent to the custom endpoint."
+        )
+
+    config = parameters.llm_config.model_copy(
+        update={
+            "custom_endpoint": endpoint,
+            "custom_api_key": SecretStr(api_key),
+            # The agent drives a tool loop, so tool support is required of the endpoint.
+            "supports_tools": True,
+            # The endpoint's capabilities are unknown, so never send temperature.
+            "supports_temperature": False,
+        }
+    )
+    return get_raw_model(parameters.model_name, config=config)
 
 
 def get_agent(
