@@ -46,6 +46,9 @@ async def run_single_task(
         "status": _STOP_REASON_STATUS.get(result.stop_reason.value, "error"),
         "data": result.final_answer or "",
         "model": parameters.model_name,
+        "total_turns": result.total_turns,
+        "error": str(result.final_error) if result.final_error else None,
+        "log_dir": str(result.output_dir),
     }
 
     generation_path = output_dir / task_id / "generation.json"
