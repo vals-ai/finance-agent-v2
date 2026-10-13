@@ -23,6 +23,12 @@ make install
 source .venv/bin/activate
 ```
 
+For standalone direct-provider runs, `uv sync --extra providers` selects the
+optional `model-library[providers]` profile. The current 0.1.33 release
+predates the extra and already includes provider SDKs. Prebuilt runner images
+own these SDKs independently of the registry agent overlay.
+
+
 ### Platform
 
 Access to the Vals platform is gated and requires approval. Please reach out to us at [vals.ai](https://www.vals.ai/) to request access.

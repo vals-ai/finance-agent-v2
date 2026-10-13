@@ -21,6 +21,9 @@ dependencies = [
     "simpleeval>=1.0.7",
 ]
 
+[project.optional-dependencies]
+providers = ["model-library[providers]==0.1.33"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
