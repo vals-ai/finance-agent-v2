@@ -508,6 +508,7 @@ dependencies = [
     { name = "sec-api" },
     { name = "simpleeval" },
     { name = "tavily-python" },
+    { name = "tqdm" },
 ]
 
 [package.optional-dependencies]
@@ -534,6 +535,7 @@ requires-dist = [
     { name = "sec-api", specifier = ">=1.0.32" },
     { name = "simpleeval", specifier = ">=1.0.7" },
     { name = "tavily-python", specifier = ">=0.7.23" },
+    { name = "tqdm", specifier = ">=4.67.1" },
 ]
 provides-extras = ["providers"]
 
