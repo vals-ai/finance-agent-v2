@@ -19,7 +19,11 @@ dependencies = [
     "model-library==0.1.29",
     "tavily-python>=0.7.23",
     "simpleeval>=1.0.7",
+    "tqdm>=4.67.1",
 ]
+
+[project.optional-dependencies]
+providers = ["model-library[providers]==0.1.29"]
 
 [build-system]
 requires = ["hatchling"]

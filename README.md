@@ -16,12 +16,14 @@ For more details on the benchmark, please refer to our [public website](https://
 
 ### Dependencies
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) for dependency management. Then run:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) for dependency management. For a local direct-provider environment, run:
 
-```
-make install
+```sh
+uv sync --extra providers
 source .venv/bin/activate
 ```
+
+The agent-registry standalone sandbox is direct-only and selects this providers profile with `uv sync --frozen --no-dev --extra providers`. For local base development, `make install PYTHON_VERSION=3.12` syncs the project environment and separately installs the `finance-agent` UV tool; activate `.venv` to use the project CLI. The Makefile default Python 3.11 is below this package's required Python 3.12.
 
 ### Platform
 

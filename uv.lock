@@ -508,6 +508,12 @@ dependencies = [
     { name = "sec-api" },
     { name = "simpleeval" },
     { name = "tavily-python" },
+    { name = "tqdm" },
+]
+
+[package.optional-dependencies]
+providers = [
+    { name = "model-library" },
 ]
 
 [package.dev-dependencies]
@@ -524,11 +530,14 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "model-library", specifier = "==0.1.29" },
+    { name = "model-library", extras = ["providers"], marker = "extra == 'providers'", specifier = "==0.1.29" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "sec-api", specifier = ">=1.0.32" },
     { name = "simpleeval", specifier = ">=1.0.7" },
     { name = "tavily-python", specifier = ">=0.7.23" },
+    { name = "tqdm", specifier = ">=4.67.1" },
 ]
+provides-extras = ["providers"]
 
 [package.metadata.requires-dev]
 dev = [
