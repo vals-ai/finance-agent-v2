@@ -510,6 +510,11 @@ dependencies = [
     { name = "tavily-python" },
 ]
 
+[package.optional-dependencies]
+providers = [
+    { name = "model-library" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "basedpyright" },
@@ -524,11 +529,13 @@ requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "model-library", specifier = "==0.1.29" },
+    { name = "model-library", extras = ["providers"], marker = "extra == 'providers'", specifier = "==0.1.29" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "sec-api", specifier = ">=1.0.32" },
     { name = "simpleeval", specifier = ">=1.0.7" },
     { name = "tavily-python", specifier = ">=0.7.23" },
 ]
+provides-extras = ["providers"]
 
 [package.metadata.requires-dev]
 dev = [

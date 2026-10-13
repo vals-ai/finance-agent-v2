@@ -23,6 +23,8 @@ make install
 source .venv/bin/activate
 ```
 
+The agent-registry standalone sandbox is direct-only and installs `model-library[providers]`; select `uv sync --extra providers` for a local direct-provider environment. The source `make install` is local development setup, not the sandbox profile selector.
+
 ### Platform
 
 Access to the Vals platform is gated and requires approval. Please reach out to us at [vals.ai](https://www.vals.ai/) to request access.
