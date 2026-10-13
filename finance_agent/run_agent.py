@@ -45,6 +45,7 @@ async def run_single_task(
         "task_id": task_id,
         "status": _STOP_REASON_STATUS.get(result.stop_reason.value, "error"),
         "data": result.final_answer or "",
+        "answer": result.final_answer or "",
         "model": parameters.model_name,
         "total_turns": result.total_turns,
         "error": str(result.final_error) if result.final_error else None,
