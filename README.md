@@ -16,17 +16,16 @@ For more details on the benchmark, please refer to our [public website](https://
 
 ### Dependencies
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) for dependency management. Then run:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) for dependency management. For standalone direct-provider runs, install the optional profile and activate the environment:
 
-```
-make install
+```bash
+uv sync --extra providers
 source .venv/bin/activate
 ```
 
-For standalone direct-provider runs, `uv sync --extra providers` selects the
-optional `model-library[providers]` profile. The current 0.1.33 release
-predates the extra and already includes provider SDKs. Prebuilt runner images
-own these SDKs independently of the registry agent overlay.
+The current model-library 0.1.33 release predates the extra and already includes
+provider SDKs. Prebuilt runner images own these SDKs independently of the
+registry agent overlay.
 
 
 ### Platform
