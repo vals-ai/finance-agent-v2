@@ -19,6 +19,7 @@ dependencies = [
     "model-library==0.1.36",
     "tavily-python>=0.7.23",
     "simpleeval>=1.0.7",
+    "tqdm>=4.67.1",
 ]
 
 [build-system]
