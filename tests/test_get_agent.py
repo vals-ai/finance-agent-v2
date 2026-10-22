@@ -26,5 +26,5 @@ class GetAgentTest(unittest.TestCase):
 
         tool = agent._tools["retrieve_information"]
         assert isinstance(tool, RetrieveInformation)
-        self.assertTrue(agent._llm.prompt_caching)
-        self.assertFalse(tool._llm.prompt_caching)
+        self.assertEqual(agent._llm.prompt_caching, "5m")
+        self.assertEqual(tool._llm.prompt_caching, "off")

@@ -94,7 +94,7 @@ def get_agent(
             raise Exception(f"Tool {tool_name} not found in tools. Available tools: {available_tools.keys()}")
         tool_cls = available_tools[tool_name]
         if tool_name == "retrieve_information":
-            tool_config = parameters.llm_config.model_copy(update={"prompt_caching": False})
+            tool_config = parameters.llm_config.model_copy(update={"prompt_caching": "off"})
             tool_llm = create_llm(parameters.model_copy(update={"llm_config": tool_config}))
             selected_tools.append(tool_cls(llm=tool_llm))  # type: ignore[call-arg]
         else:

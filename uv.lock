@@ -523,7 +523,7 @@ requires-dist = [
     { name = "backoff", specifier = ">=2.2.1" },
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "model-library", specifier = "==0.1.36" },
+    { name = "model-library", specifier = "==0.1.37" },
     { name = "requests", specifier = ">=2.32.5" },
     { name = "sec-api", specifier = ">=1.0.32" },
     { name = "simpleeval", specifier = ">=1.0.7" },
@@ -1058,7 +1058,7 @@ wheels = [
 
 [[package]]
 name = "model-library"
-version = "0.1.36"
+version = "0.1.37"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ai21" },
@@ -1085,9 +1085,9 @@ dependencies = [
     { name = "typing-extensions" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/1a/59/d623a1e0b12bab1d50a634ef487f655821cd4f761a1dd362385930e73849/model_library-0.1.36.tar.gz", hash = "sha256:793e79ee715ee63c09b0813e00906d4fb34098ea86e8475287dbfe0eaf8a2512", size = 1348875, upload-time = "2026-10-21T17:24:44.658Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/49/33772bd785249972e8b32e08a9ccd41d1200c37f2a9ef19b118649df1cba/model_library-0.1.37.tar.gz", hash = "sha256:7d1f5b5d3bb4d5f0dcf182fb85a5048e9364314b8fe3ef21f4a5bb1eee02b342", size = 1348676, upload-time = "2026-10-22T02:52:25.632Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ee/7e/1f3278ba5a5cf11834e217ee1bebb7154e7152f43f306693bbbde98cdae7/model_library-0.1.36-py3-none-any.whl", hash = "sha256:59cbecb399295041f720c24860af4f68c6f9584be288bc870c35392ede1becd7", size = 718849, upload-time = "2026-10-21T17:24:41.566Z" },
+    { url = "https://files.pythonhosted.org/packages/b6/6b/941010ce60a9d9a2d12fd0538d3b114efdfd55b00d3bedd009cff1b5e432/model_library-0.1.37-py3-none-any.whl", hash = "sha256:5e32e4224ffab7881cc8dd0a14e1667f7a6ad1ed1bcee558d7d5522b7ddf45aa", size = 718246, upload-time = "2026-10-22T02:52:22.139Z" },
 ]
 
 [[package]]
