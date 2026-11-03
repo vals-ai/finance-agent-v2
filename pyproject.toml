@@ -48,3 +48,7 @@ exclude = [
 ]
 typeCheckingMode = "basic"
 reportExplicitAny = false
+
+[tool.uv]
+exclude-newer = "7 days"
+exclude-newer-package = { certifi = false, model-library = false }
