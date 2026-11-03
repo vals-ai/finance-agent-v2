@@ -605,12 +605,12 @@ class PriceHistory(Tool):
 
             _validate_date_format("start_date", start_date)
             _validate_date_format("end_date", end_date)
-            start_date = min(start_date, MAX_END_DATE)
-            end_date = min(end_date, MAX_END_DATE)
             if start_date > end_date:
                 raise ValueError(
                     f"start_date '{start_date}' is later than end_date '{end_date}'."
                 )
+            start_date = min(start_date, MAX_END_DATE)
+            end_date = min(end_date, MAX_END_DATE)
             if not asset_class:
                 raise ValueError("asset_class is required")
 
