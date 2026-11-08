@@ -70,3 +70,22 @@ class TavilyCostReportTests(unittest.IsolatedAsyncioTestCase):
             )
 
         self.assertFalse(os.path.exists(self.report))
+
+    async def test_search_retries_without_usage_when_the_usage_request_fails(self):
+        self.search_mock = AsyncMock(
+            side_effect=[
+                ValueError("include_usage rejected"),
+                {"request_id": "req-1", "results": [{"url": "https://a.com"}]},
+            ]
+        )
+        self.tool.client.search = self.search_mock
+
+        output = await self.tool.execute(
+            {"search_query": "q"}, {}, logging.getLogger("test")
+        )
+
+        with_usage, without_usage = self.search_mock.call_args_list
+        self.assertIs(with_usage.kwargs["include_usage"], True)
+        self.assertNotIn("include_usage", without_usage.kwargs)
+        self.assertIn("https://a.com", output.output)
+        self.assertFalse(os.path.exists(self.report))
