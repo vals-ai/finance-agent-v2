@@ -4,6 +4,7 @@ import logging
 import math
 import os
 import re
+from collections.abc import Awaitable, Callable
 from decimal import Decimal
 from typing import Any
 
@@ -71,6 +72,20 @@ def report_tavily_cost(response: dict[str, Any]) -> None:
             report.write(json.dumps(charge) + "\n")
     except OSError as e:
         logging.getLogger(__name__).warning(f"Could not write search cost report {path}: {e}")
+
+
+async def call_tavily_with_usage(
+    call: Callable[..., Awaitable[dict[str, Any]]], **params: Any
+) -> dict[str, Any]:
+    try:
+        response = await call(**params, include_usage=True)
+    except Exception as e:
+        logging.getLogger(__name__).warning(
+            f"Tavily call with include_usage failed, retrying without it: {e}"
+        )
+        return await call(**params)
+    report_tavily_cost(response)
+    return response
 
 
 class Calculator(Tool):
@@ -215,16 +230,15 @@ class TavilyWebSearch(Tool):
 
             kwargs["start_date"] = start_date
 
-        response = await self.client.search(
+        response = await call_tavily_with_usage(
+            self.client.search,
             search_depth="fast",
             end_date=end_date,
             max_results=number_of_results,
             chunks_per_source=1,
             query=search_query,
-            include_usage=True,
             **kwargs,
         )
-        report_tavily_cost(response)
 
         return response.get("results", [])
 
