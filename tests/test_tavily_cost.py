@@ -5,7 +5,13 @@ import tempfile
 import unittest
 from unittest.mock import AsyncMock, patch
 
-from finance_agent.tools import SEARCH_COST_PATH_ENV, TavilyWebSearch
+from tavily.errors import BadRequestError, UsageLimitExceededError
+
+from finance_agent.tools import (
+    SEARCH_COST_PATH_ENV,
+    TavilyWebSearch,
+    call_tavily_with_usage,
+)
 
 
 class TavilyCostReportTests(unittest.IsolatedAsyncioTestCase):
@@ -74,7 +80,7 @@ class TavilyCostReportTests(unittest.IsolatedAsyncioTestCase):
     async def test_search_retries_without_usage_when_the_usage_request_fails(self):
         self.search_mock = AsyncMock(
             side_effect=[
-                ValueError("include_usage rejected"),
+                BadRequestError("include_usage rejected"),
                 {"request_id": "req-1", "results": [{"url": "https://a.com"}]},
             ]
         )
@@ -89,3 +95,11 @@ class TavilyCostReportTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("include_usage", without_usage.kwargs)
         self.assertIn("https://a.com", output.output)
         self.assertFalse(os.path.exists(self.report))
+
+    async def test_rate_limited_call_is_not_retried_without_usage(self):
+        call = AsyncMock(side_effect=UsageLimitExceededError("429"))
+
+        with self.assertRaises(UsageLimitExceededError):
+            await call_tavily_with_usage(call, query="q")
+
+        self.assertEqual(call.await_count, 1)
