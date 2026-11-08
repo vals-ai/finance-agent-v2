@@ -4,6 +4,8 @@ import logging
 import math
 import os
 import re
+from collections.abc import Awaitable, Callable
+from decimal import Decimal
 from typing import Any
 
 import aiohttp
@@ -11,6 +13,7 @@ from bs4 import BeautifulSoup
 from model_library.agent import Tool, ToolOutput
 from model_library.base import LLM
 from tavily import AsyncTavilyClient
+from tavily.errors import BadRequestError
 
 from simpleeval import SimpleEval
 
@@ -41,6 +44,49 @@ def _validate_date_format(field_name: str, value: str) -> None:
         raise ValueError(
             f"Invalid {field_name} format: '{value}'. Expected YYYY-MM-DD."
         )
+
+
+SEARCH_COST_PATH_ENV = "VALKYRIE_SEARCH_COST_PATH"
+# Pay-as-you-go price, https://docs.tavily.com/documentation/api-credits
+TAVILY_USD_PER_CREDIT = Decimal("0.008")
+
+
+def report_tavily_cost(response: dict[str, Any]) -> None:
+    """Append a Tavily call's cost to the Valkyrie search cost report, when the run asks for one.
+
+    The cost is the credits Tavily reports for the call (`include_usage=True`), keyed by its
+    request id so Valkyrie counts a call once. A response without usage is not reported.
+    """
+    path = os.environ.get(SEARCH_COST_PATH_ENV)
+    usage = response.get("usage")
+    credits = usage.get("credits") if isinstance(usage, dict) else None
+    if not path or isinstance(credits, bool) or not isinstance(credits, int | float):
+        return
+    if not math.isfinite(credits) or credits < 0:
+        return
+    charge = {"provider": "tavily", "amount_usd": str(TAVILY_USD_PER_CREDIT * Decimal(str(credits)))}
+    request_id = response.get("request_id")
+    if isinstance(request_id, str) and request_id:
+        charge["source_id"] = request_id
+    try:
+        with open(path, "a", encoding="utf-8") as report:
+            report.write(json.dumps(charge) + "\n")
+    except OSError as e:
+        logging.getLogger(__name__).warning(f"Could not write search cost report {path}: {e}")
+
+
+async def call_tavily_with_usage(
+    call: Callable[..., Awaitable[dict[str, Any]]], **params: Any
+) -> dict[str, Any]:
+    try:
+        response = await call(**params, include_usage=True)
+    except (TypeError, BadRequestError) as e:
+        logging.getLogger(__name__).warning(
+            f"Tavily rejected include_usage, retrying without it: {e}"
+        )
+        return await call(**params)
+    report_tavily_cost(response)
+    return response
 
 
 class Calculator(Tool):
@@ -185,7 +231,8 @@ class TavilyWebSearch(Tool):
 
             kwargs["start_date"] = start_date
 
-        response = await self.client.search(
+        response = await call_tavily_with_usage(
+            self.client.search,
             search_depth="fast",
             end_date=end_date,
             max_results=number_of_results,
