@@ -13,6 +13,7 @@ from bs4 import BeautifulSoup
 from model_library.agent import Tool, ToolOutput
 from model_library.base import LLM
 from tavily import AsyncTavilyClient
+from tavily.errors import BadRequestError
 
 from simpleeval import SimpleEval
 
@@ -79,9 +80,9 @@ async def call_tavily_with_usage(
 ) -> dict[str, Any]:
     try:
         response = await call(**params, include_usage=True)
-    except Exception as e:
+    except (TypeError, BadRequestError) as e:
         logging.getLogger(__name__).warning(
-            f"Tavily call with include_usage failed, retrying without it: {e}"
+            f"Tavily rejected include_usage, retrying without it: {e}"
         )
         return await call(**params)
     report_tavily_cost(response)
