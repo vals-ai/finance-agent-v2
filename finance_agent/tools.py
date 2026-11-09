@@ -368,7 +368,7 @@ class EDGARSearch(Tool):
                 "Authorization": key,
             }
 
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(trust_env=True) as session:
                 async with session.post(
                     self.sec_api_url, json=payload, headers=headers
                 ) as response:
@@ -421,7 +421,7 @@ class ParseHtmlPage(Tool):
     async def _parse_html_page(self, url: str) -> str:
         @retry_with_policy(get_retry_policy(url))
         async def _fetch(fetch_url: str) -> str:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(trust_env=True) as session:
                 try:
                     async with session.get(
                         fetch_url,
@@ -590,7 +590,7 @@ class PriceHistory(Tool):
             params["resampleFreq"] = "1day"
 
         headers = {"Authorization": f"Token {self._api_key}"}
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(trust_env=True) as session:
             async with session.get(
                 url,
                 params=params,
