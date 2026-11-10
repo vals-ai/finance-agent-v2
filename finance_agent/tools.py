@@ -47,8 +47,8 @@ def _validate_date_format(field_name: str, value: str) -> None:
 
 
 SEARCH_COST_PATH_ENV = "VALKYRIE_SEARCH_COST_PATH"
-# Pay-as-you-go price, https://docs.tavily.com/documentation/api-credits
-TAVILY_USD_PER_CREDIT = Decimal("0.008")
+# Annual Scale contract price, the rate Bills uses (provider-costs daily_ingest/balances.toml)
+TAVILY_USD_PER_CREDIT = Decimal("0.0043")
 
 
 def report_tavily_cost(response: dict[str, Any]) -> None:
