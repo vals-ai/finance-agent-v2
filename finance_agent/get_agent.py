@@ -8,7 +8,7 @@ from model_library.exceptions import MaxContextWindowExceededError
 from model_library.registry_utils import get_raw_model, get_registry_model
 from pydantic import BaseModel, SecretStr
 
-from .prompt import QUESTION_PROMPT, SYSTEM_PROMPT
+from .prompt import AGENT_PROMPT, QUESTION_PROMPT, SYSTEM_PROMPT
 from .exceptions import RetryExhaustedError
 from .tools import (
     VALID_TOOLS,
@@ -34,7 +34,28 @@ class Parameters(BaseModel):
     llm_config: LLMConfig
 
 
+INPUT_MODE_ENV = "FINANCE_AGENT_INPUT"
+INPUT_MODES = ("bundled", "problem_file")
+
+
+def input_mode() -> str:
+    """Read FINANCE_AGENT_INPUT: unset means "bundled"; any other value is an error."""
+    mode = os.environ.get(INPUT_MODE_ENV, "bundled")
+    if mode not in INPUT_MODES:
+        raise ValueError(f"{INPUT_MODE_ENV} must be one of {INPUT_MODES}, got {mode!r}")
+    return mode
+
+
 def build_input(question: str) -> list[InputItem]:
+    """Build the model input for one question.
+
+    bundled: the agent's own benchmark instructions in the system message and the
+    question in QUESTION_PROMPT. problem_file: the text is a whole problem file that
+    already carries the benchmark instructions, so it is sent as written after
+    AGENT_PROMPT, which holds only the agent's own tool and hand-in text.
+    """
+    if input_mode() == "problem_file":
+        return [SystemInput(text=AGENT_PROMPT), TextInput(text=question)]
     return [SystemInput(text=SYSTEM_PROMPT), TextInput(text=QUESTION_PROMPT.format(question=question))]
 
 
