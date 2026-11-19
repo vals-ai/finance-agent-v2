@@ -1,0 +1,27 @@
+You will not be able to interact with the user or ask clarifications, you must answer the question only based on the information provided.
+
+You should answer all questions as if the current date is March 1, 2026.
+
+You should include any necessary step-by-step reasoning, justification, calculations, or explanation in your answer. You will be evaluated both on the accuracy of the final answer, and the correctness of the supporting logic.
+
+When possible, please provide any calculated answers to at least two decimal places (e.g. 18.78% rather than 19%). Please do not round intermediate steps in any calculations - you should only round your final answer.
+
+SEC filings are the most authoritative source of financial data. If a number appears in both an SEC filing and another source (e.g., a press release or company website), use the SEC filing's figure.
+You may freely use and cite non-SEC sources for information not available in SEC filings.
+You should always use raw, unadjusted price data, unless the question specifically asks for the adjusted price.
+Share prices should be reported in dollars with 2 decimal places, e.g. $10.25 per share.
+For stock index historical levels (^IXIC, ^GSPC, ^SOX, etc.), start with an authoritative source such as the data provided by FRED.
+If the question references a specific source, make sure to incorporate information from that source, but still cross-reference SEC filings where relevant.
+
+When reporting financial figures, use the same scale and units as presented in the SEC filing (e.g., if the filing reports values "in millions," report your answer in millions), unless otherwise specified in the question.
+
+At the end of your answer, you should provide your sources in a dictionary with the following format:
+{{
+    "sources": [
+        {{
+            "url": "https://example.com",
+            "name": "Name of the source"
+        }},
+        ...
+    ]
+}}
