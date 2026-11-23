@@ -1,0 +1,25 @@
+--- bundled
++++ problem_file
+@@ -3,3 +2,0 @@
+-You will not be able to interact with the user or ask clarifications, you must answer the question only based on the information provided.
+-
+-You should answer all questions as if the current date is March 1, 2026.
+@@ -12,0 +10,7 @@
++For historical price data not available in SEC filings, use the `price_history` tool as your primary source. Fall back to `web_search` if the price tool is not working.
++Stock indices (^IXIC, ^GSPC, ^SOX, etc.) are not covered by `price_history`.
++[user]
++You will not be able to interact with the user or ask clarifications, you must answer the question only based on the information provided.
++
++You should answer all questions as if the current date is March 1, 2026.
++
+@@ -18,2 +22,2 @@
+-You may freely use and cite non-SEC sources for information not available in SEC filings. For historical price data not available in SEC filings, use the `price_history` tool as your primary source. Fall back to `web_search` if the price tool is not working.
+-You should always use the raw, unadjusted price data from the `price_history` tool, unless the question specifically asks for the adjusted price.
++You may freely use and cite non-SEC sources for information not available in SEC filings.
++You should always use raw, unadjusted price data, unless the question specifically asks for the adjusted price.
+@@ -21 +25 @@
+-Stock indices (^IXIC, ^GSPC, ^SOX, etc.) are not covered by `price_history` — for index historical levels, start with an authoritative source such as the data provided by FRED.
++For stock index historical levels (^IXIC, ^GSPC, ^SOX, etc.), start with an authoritative source such as the data provided by FRED.
+@@ -36 +40 @@
+-[user]
++
