@@ -30,8 +30,8 @@ async def run_single_task(
 ) -> dict[str, Any]:
     """Run one question and write `<output_dir>/<task_id>/generation.json`.
 
-    For a harness driving one question per process. Failures propagate: the process
-    exits nonzero and writes no file, which is how the harness detects them.
+    For a harness driving one question per process. The task deadline writes a
+    `max_time` record. Unexpected failures propagate without a generation file.
     """
     # task_id names a directory under output_dir. An absolute value or one containing
     # a separator would resolve outside it and write the record somewhere unexpected.
@@ -39,12 +39,24 @@ async def run_single_task(
         raise ValueError(f"task_id must be a single path segment, got {task_id!r}")
 
     agent = get_agent(parameters, log_dir=log_dir)
-    result = await agent.run(build_input(question), question_id=task_id, atif_export=True)
+    agent_input = build_input(question)
+    deadline = asyncio.timeout(parameters.max_time_seconds)
+    try:
+        async with deadline:
+            result = await agent.run(agent_input, question_id=task_id, atif_export=True)
+    except TimeoutError:
+        if not deadline.expired():
+            raise
+        status = "max_time"
+        answer = ""
+    else:
+        status = _STOP_REASON_STATUS.get(result.stop_reason.value, "error")
+        answer = result.final_answer or ""
 
     generation = {
         "task_id": task_id,
-        "status": _STOP_REASON_STATUS.get(result.stop_reason.value, "error"),
-        "data": result.final_answer or "",
+        "status": status,
+        "data": answer,
         "model": parameters.model_name,
     }
 
