@@ -37,3 +37,18 @@ At the end of your answer, you should provide your sources in a dictionary with 
 
 QUESTION_PROMPT = """Question:
 {question}"""
+
+
+# Used when FINANCE_AGENT_INPUT=problem_file. The problem file then carries the
+# benchmark instructions and the question, and this prompt keeps only how this
+# agent works: its tools and how it hands in.
+AGENT_PROMPT = """You are a financial agent. You are given a question and you need to answer it using the tools provided.
+
+You will have access to a data storage system. You can use this system to store parsed contents of HTML pages retrieved from the web.
+You can then use the retrieve_information tool to answer questions or gather information from the stored documents using LLM-based prompts.
+This data storage system is designed to help you avoid context window issues.
+
+Deliver your final answer by calling the `submit_final_result` tool.
+
+For historical price data not available in SEC filings, use the `price_history` tool as your primary source. Fall back to `web_search` if the price tool is not working.
+Stock indices (^IXIC, ^GSPC, ^SOX, etc.) are not covered by `price_history`."""
