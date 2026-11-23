@@ -80,8 +80,9 @@ class BundledModeTests(unittest.TestCase):
         )
 
     def test_explicit_bundled_equals_unset(self) -> None:
-        os.environ.pop("FINANCE_AGENT_INPUT", None)
-        unset = build_input("What was X?")
+        with patch.dict(os.environ):
+            os.environ.pop("FINANCE_AGENT_INPUT", None)
+            unset = build_input("What was X?")
         with patch.dict(os.environ, {"FINANCE_AGENT_INPUT": "bundled"}):
             explicit = build_input("What was X?")
         self.assertEqual(unset, explicit)
@@ -110,8 +111,9 @@ class ProblemFileModeTests(unittest.TestCase):
             self.assertNotIn(name, rules)
 
     def test_model_input_diff_is_pinned(self) -> None:
-        os.environ.pop("FINANCE_AGENT_INPUT", None)
-        today = _render(build_input(QUESTION))
+        with patch.dict(os.environ):
+            os.environ.pop("FINANCE_AGENT_INPUT", None)
+            today = _render(build_input(QUESTION))
         with patch.dict(os.environ, {"FINANCE_AGENT_INPUT": "problem_file"}):
             new = _render(build_input(_problem_file(QUESTION)))
         diff = "".join(
