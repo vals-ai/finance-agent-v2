@@ -74,6 +74,8 @@ You can also specify a list of questions in a text file, one question per line:
 finance-agent --question-file data/public.txt
 ```
 
+With `FINANCE_AGENT_INPUT=problem_file`, the file is one whole problem (benchmark rules, then the question) and is sent to the model as written, as one input.
+
 The default configuration is the one we used to run the benchmark.
 
 ### List of Models
