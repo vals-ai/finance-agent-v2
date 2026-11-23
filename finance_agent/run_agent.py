@@ -9,7 +9,7 @@ from model_library.agent import AgentResult
 from model_library.base import LLMConfig
 from tqdm.asyncio import tqdm
 
-from .get_agent import Parameters, build_input, get_agent, MAX_TIME_SECONDS
+from .get_agent import Parameters, build_input, get_agent, input_mode, MAX_TIME_SECONDS
 from .tools import VALID_TOOLS
 
 # A time or turn limit is reported through the stop reason, not by raising. Anything
@@ -120,6 +120,24 @@ async def run_tests_parallel(
     return formatted_results
 
 
+def read_question_file(path: str, single_task: bool) -> list[str]:
+    """Read --question-file into the list of model inputs to run.
+
+    problem_file mode: the file is one whole problem (benchmark rules, then the
+    question), so it is always one input, sent as written: no split and no strip,
+    the same text build_input gets from the fabv2 runner's dataset file.
+    bundled mode: with --output-dir, the whole file stripped is one question;
+    without it, each nonblank line stripped is a question.
+    """
+    if input_mode() == "problem_file":
+        return [Path(path).read_text()]
+    if single_task:
+        # Read the file whole: a single question may span multiple lines.
+        return [Path(path).read_text().strip()]
+    with open(path) as f:
+        return [line.strip() for line in f if line.strip()]
+
+
 async def main():
     parser = argparse.ArgumentParser(description="Run the harness for the finance agent benchmark")
     parser.add_argument(
@@ -144,7 +162,8 @@ async def main():
     parser.add_argument(
         "--question-file",
         type=str,
-        help="Path to file containing questions (one per line)",
+        help="Path to file containing questions (one per line). With FINANCE_AGENT_INPUT=problem_file, "
+        "the whole file is one problem, sent as written.",
     )
     parser.add_argument(
         "--tools",
@@ -196,12 +215,8 @@ async def main():
     if single_task and not args.question_file:
         parser.error("--question-file is required when --output-dir is set")
 
-    if single_task:
-        # Read the file whole: a single question may span multiple lines.
-        questions = [Path(args.question_file).read_text().strip()]
-    elif args.question_file:
-        with open(args.question_file) as f:
-            questions = [line.strip() for line in f if line.strip()]
+    if args.question_file:
+        questions = read_question_file(args.question_file, single_task=single_task)
     elif args.questions:
         questions = args.questions
     else:
