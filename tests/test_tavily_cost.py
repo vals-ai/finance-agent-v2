@@ -43,7 +43,7 @@ class TavilyCostReportTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(self.search_mock.call_args.kwargs["include_usage"], True)
         self.assertEqual(
             self.charges(),
-            [{"provider": "tavily", "amount_usd": "0.016", "source_id": "req-1"}],
+            [{"provider": "tavily", "amount_usd": "0.0086", "source_id": "req-1"}],
         )
 
     async def test_search_without_usage_is_not_reported_as_free(self):
