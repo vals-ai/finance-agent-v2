@@ -139,3 +139,45 @@ class RetrieveInformationCaptureTest(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NativeFetchProxyTest(unittest.IsolatedAsyncioTestCase):
+    async def test_native_fetch_uses_environment_proxy(self):
+        import os
+        from unittest.mock import patch
+
+        import aiohttp
+        import finance_agent.tools as native_tools
+
+        async def connect(connector, request, traces, timeout):
+            if request.proxy is None:
+                raise PermissionError("direct egress denied")
+            raise RuntimeError(f"proxy reached: {request.proxy}")
+
+        for scheme in ("http", "https"):
+            url = f"{scheme}://public.example/document"
+            with self.subTest(scheme=scheme), patch.dict(
+                os.environ,
+                {"HTTP_PROXY": "http://proxy.internal:3128", "HTTPS_PROXY": "http://proxy.internal:3128"},
+                clear=True,
+            ), patch.object(aiohttp.TCPConnector, "_create_connection", connect):
+                with self.assertRaisesRegex(RuntimeError, "proxy reached: http://proxy.internal:3128"):
+                    await native_tools.ParseHtmlPage()._parse_html_page(url)
+
+    async def test_native_fetch_cannot_bypass_denied_direct_egress(self):
+        import os
+        from unittest.mock import patch
+
+        import aiohttp
+        import finance_agent.tools as native_tools
+
+        async def connect(connector, request, traces, timeout):
+            self.assertIsNone(request.proxy)
+            raise PermissionError("direct egress denied")
+
+        url = "https://public.example/document"
+        with patch.dict(os.environ, {}, clear=True), patch.object(
+            aiohttp.TCPConnector, "_create_connection", connect
+        ):
+            with self.assertRaisesRegex(aiohttp.ClientOSError, "direct egress denied"):
+                await native_tools.ParseHtmlPage()._parse_html_page(url)
